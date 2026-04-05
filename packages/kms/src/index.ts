@@ -1,1 +1,1 @@
-// @cosmos-gov-signer/kms
+export { decodeDerSignature, extractPublicKeyFromSpki } from './der.js'
