@@ -1,1 +1,1 @@
-// @cosmos-gov-signer/adapter-moca
+export { deriveAddress } from './address.js'
