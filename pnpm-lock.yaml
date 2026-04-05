@@ -24,7 +24,11 @@ importers:
 
   packages/kms: {}
 
-  packages/poller: {}
+  packages/poller:
+    dependencies:
+      '@cosmos-gov-signer/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

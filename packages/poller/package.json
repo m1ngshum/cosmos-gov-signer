@@ -16,5 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@cosmos-gov-signer/core": "workspace:*"
   }
 }
