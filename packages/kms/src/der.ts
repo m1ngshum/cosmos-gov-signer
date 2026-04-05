@@ -28,13 +28,13 @@ function readTagAndLength(
 }
 
 /**
- * Normalize a DER integer to exactly `size` bytes (big-endian).
+ * Write a DER integer normalized to exactly `size` bytes into `out` at `outOffset`.
  * DER integers may have a leading 0x00 pad (if high bit is set) or be shorter than `size`.
  */
-function normalizeInteger(der: Uint8Array, offset: number, length: number, size: number): Uint8Array {
-  const result = new Uint8Array(size)
-
-  // Strip leading zero padding
+function writeNormalizedInteger(
+  der: Uint8Array, offset: number, length: number,
+  out: Uint8Array, outOffset: number, size: number,
+): void {
   let start = offset
   let len = length
   while (len > size && der[start] === 0x00) {
@@ -42,11 +42,8 @@ function normalizeInteger(der: Uint8Array, offset: number, length: number, size:
     len--
   }
 
-  // Copy right-aligned into the result buffer (left-pad with zeros)
   const copyLen = Math.min(len, size)
-  result.set(der.subarray(start, start + copyLen), size - copyLen)
-
-  return result
+  out.set(der.subarray(start, start + copyLen), outOffset + size - copyLen)
 }
 
 /**
@@ -66,19 +63,16 @@ export function decodeDerSignature(der: Uint8Array): Uint8Array {
   if (rHeader.tag !== DER_INTEGER_TAG) {
     throw new Error(`Expected DER INTEGER (0x02) for r, got 0x${rHeader.tag.toString(16)}`)
   }
-  const r = normalizeInteger(der, rHeader.contentOffset, rHeader.length, 32)
+  const result = new Uint8Array(64)
+  writeNormalizedInteger(der, rHeader.contentOffset, rHeader.length, result, 0, 32)
 
-  // Read s
   const sOffset = rHeader.contentOffset + rHeader.length
   const sHeader = readTagAndLength(der, sOffset)
   if (sHeader.tag !== DER_INTEGER_TAG) {
     throw new Error(`Expected DER INTEGER (0x02) for s, got 0x${sHeader.tag.toString(16)}`)
   }
-  const s = normalizeInteger(der, sHeader.contentOffset, sHeader.length, 32)
+  writeNormalizedInteger(der, sHeader.contentOffset, sHeader.length, result, 32, 32)
 
-  const result = new Uint8Array(64)
-  result.set(r, 0)
-  result.set(s, 32)
   return result
 }
 
