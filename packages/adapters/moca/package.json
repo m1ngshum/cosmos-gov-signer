@@ -10,11 +10,17 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1",
+    "bech32": "^2.0.0"
   }
 }
