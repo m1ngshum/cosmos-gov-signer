@@ -38,9 +38,6 @@ importers:
       '@noble/hashes':
         specifier: ^2.0.1
         version: 2.0.1
-      bech32:
-        specifier: ^2.0.0
-        version: 2.0.0
       cosmjs-types:
         specifier: ^0.11.0
         version: 0.11.0
@@ -744,9 +741,6 @@ packages:
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
-
-  bech32@2.0.0:
-    resolution: {integrity: sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==}
 
   bowser@2.14.1:
     resolution: {integrity: sha512-tzPjzCxygAKWFOJP011oxFHs57HzIhOEracIgAePE4pqB3LikALKnSzUyU4MGs9/iCEUuHlAJTjTc5M+u7YEGg==}
@@ -1965,8 +1959,6 @@ snapshots:
   assertion-error@2.0.1: {}
 
   base64-js@1.5.1: {}
-
-  bech32@2.0.0: {}
 
   bowser@2.14.1: {}
 

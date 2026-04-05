@@ -44,6 +44,12 @@ function mapLcdStatus(raw: string): GovernanceProposal['status'] {
   return mapped
 }
 
+const MOCA_REGISTRY = new Registry([
+  [TYPE_URLS.msgVote, MsgVote],
+  [TYPE_URLS.msgExec, MsgExec],
+  [TYPE_URLS.msgSubmitProposal, MsgSubmitProposal],
+])
+
 export class MocaChainAdapter implements ChainAdapter {
   readonly chainId = 'moca_222888-1'
   readonly addressPrefix = 'moca'
@@ -51,16 +57,11 @@ export class MocaChainAdapter implements ChainAdapter {
   readonly rpcEndpoint: string
   readonly lcdEndpoint: string
 
-  private readonly registry: Registry
+  private readonly registry = MOCA_REGISTRY
 
   constructor(config: MocaAdapterConfig) {
     this.rpcEndpoint = config.rpcEndpoint
     this.lcdEndpoint = config.lcdEndpoint
-
-    this.registry = new Registry()
-    this.registry.register(TYPE_URLS.msgVote, MsgVote)
-    this.registry.register(TYPE_URLS.msgExec, MsgExec)
-    this.registry.register(TYPE_URLS.msgSubmitProposal, MsgSubmitProposal)
   }
 
   async fetchActiveProposals(): Promise<readonly GovernanceProposal[]> {
@@ -136,8 +137,7 @@ export class MocaChainAdapter implements ChainAdapter {
   }
 
   async broadcastTx(signedTxBytes: Uint8Array): Promise<string> {
-    const url = `${this.rpcEndpoint}`
-    const response = await fetch(url, {
+    const response = await fetch(this.rpcEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

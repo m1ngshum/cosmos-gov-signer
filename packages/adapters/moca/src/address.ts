@@ -1,5 +1,5 @@
 import { keccak_256 } from '@noble/hashes/sha3.js'
-import { bech32 } from 'bech32'
+import { toBech32 } from '@cosmjs/encoding'
 
 /**
  * Derive a bech32 address from an uncompressed secp256k1/ethsecp256k1 public key.
@@ -18,7 +18,6 @@ export function deriveAddress(publicKey: Uint8Array, prefix: string): string {
 
   const hash = keccak_256(publicKey)
   const addressBytes = hash.slice(hash.length - 20)
-  const words = bech32.toWords(addressBytes)
 
-  return bech32.encode(prefix, words)
+  return toBech32(prefix, addressBytes)
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { keccak_256 } from '@noble/hashes/sha3.js'
-import { bech32 } from 'bech32'
+import { toBech32 } from '@cosmjs/encoding'
 import { deriveAddress } from '../address.js'
 
 function fromHex(hexStr: string): Uint8Array {
@@ -9,12 +8,6 @@ function fromHex(hexStr: string): Uint8Array {
     bytes[i / 2] = parseInt(hexStr.substring(i, i + 2), 16)
   }
   return bytes
-}
-
-function hex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
 }
 
 // Well-known Ethereum test vector:
@@ -29,24 +22,12 @@ const TEST_PUBKEY = fromHex(
 )
 
 describe('deriveAddress', () => {
-  it('derives correct bech32 address from known pubkey', () => {
+  it('derives correct bech32 address from known ETH test vector', () => {
     const address = deriveAddress(TEST_PUBKEY, 'moca')
 
-    // Verify via independent computation
-    const hash = keccak_256(TEST_PUBKEY)
-    const last20 = hash.slice(hash.length - 20)
-    const expected = bech32.encode('moca', bech32.toWords(last20))
-
+    // Known ETH address for privkey 0x1: 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf
+    const expected = toBech32('moca', fromHex('7e5f4552091a69125d5dfcb7b8c2659029395bdf'))
     expect(address).toBe(expected)
-    expect(address.startsWith('moca1')).toBe(true)
-  })
-
-  it('produces the same last-20-bytes as the known ETH address', () => {
-    const hash = keccak_256(TEST_PUBKEY)
-    const last20 = hex(hash.slice(hash.length - 20))
-
-    // ETH address 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf (lowercase)
-    expect(last20).toBe('7e5f4552091a69125d5dfcb7b8c2659029395bdf')
   })
 
   it('uses the correct prefix', () => {
