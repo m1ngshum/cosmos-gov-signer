@@ -1,1 +1,1 @@
-// @cosmos-gov-signer/poller
+export { pollProposals } from './poll.js'
