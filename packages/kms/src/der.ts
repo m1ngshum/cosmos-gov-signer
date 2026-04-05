@@ -15,6 +15,9 @@ function readTagAndLength(
   let contentOffset = offset + 2
 
   // Long-form length (first byte has high bit set, lower 7 bits = number of length bytes)
+  if (length === 0x80) {
+    throw new Error('DER indefinite-length form (0x80) is not permitted')
+  }
   if (length > 0x80) {
     const numLengthBytes = length & 0x7f
     length = 0

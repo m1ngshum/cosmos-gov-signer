@@ -9,6 +9,9 @@ export function evaluateSigningGate(ctx: SigningGateContext): SigningGateResult 
   const { record, now } = ctx
 
   if (record.status === 'ready') {
+    if (record.txHash !== undefined) {
+      return { approved: false, reason: 'already_signed' }
+    }
     return { approved: true }
   }
 

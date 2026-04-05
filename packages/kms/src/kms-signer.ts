@@ -18,6 +18,10 @@ export async function signWithKMS(
   msgHash: Uint8Array,
   region: string,
 ): Promise<Uint8Array> {
+  if (msgHash.length !== 32) {
+    throw new Error(`signWithKMS requires a 32-byte digest, got ${msgHash.length} bytes`)
+  }
+
   const client = new KMSClient({ region })
 
   const response = await client.send(

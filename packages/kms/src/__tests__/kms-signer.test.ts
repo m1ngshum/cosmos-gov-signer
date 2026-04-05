@@ -94,6 +94,16 @@ describe('signWithKMS', () => {
       signWithKMS('key-123', new Uint8Array(32), 'us-east-1'),
     ).rejects.toThrow('AccessDeniedException')
   })
+
+  it('rejects non-32-byte msgHash', async () => {
+    await expect(
+      signWithKMS('key-123', new Uint8Array(64), 'us-east-1'),
+    ).rejects.toThrow('32-byte digest')
+
+    await expect(
+      signWithKMS('key-123', new Uint8Array(16), 'us-east-1'),
+    ).rejects.toThrow('32-byte digest')
+  })
 })
 
 describe('getKMSPublicKey', () => {

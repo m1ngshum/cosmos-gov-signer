@@ -40,12 +40,12 @@ describe('evaluateSigningGate', () => {
       expect(result).toEqual({ approved: true })
     })
 
-    it('approves ready even if txHash exists', () => {
+    it('rejects ready if txHash already exists', () => {
       const result = evaluateSigningGate(makeCtx({
         status: 'ready',
         txHash: '0xabc',
       }))
-      expect(result).toEqual({ approved: true })
+      expect(result).toEqual({ approved: false, reason: 'already_signed' })
     })
   })
 
