@@ -82,6 +82,12 @@ describe('decodeDerSignature', () => {
     const der = fromHex('3003' + '030100')
     expect(() => decodeDerSignature(der)).toThrow('Expected DER INTEGER')
   })
+
+  it('throws on BER indefinite-length form (0x80)', () => {
+    // SEQUENCE with indefinite-length marker 0x80
+    const der = fromHex('3080' + '0220' + R32 + '0220' + S32 + '0000')
+    expect(() => decodeDerSignature(der)).toThrow('indefinite-length')
+  })
 })
 
 describe('extractPublicKeyFromSpki', () => {

@@ -73,15 +73,31 @@ export class MocaChainAdapter implements ChainAdapter {
     }
 
     const data = (await response.json()) as LcdProposalsResponse
+    if (!Array.isArray(data?.proposals)) {
+      throw new Error('LCD response missing proposals array')
+    }
 
-    return data.proposals.map((p): GovernanceProposal => ({
-      id: Number(p.id),
-      title: p.title,
-      summary: p.summary,
-      status: mapLcdStatus(p.status),
-      votingStartTime: new Date(p.voting_start_time),
-      votingEndTime: new Date(p.voting_end_time),
-    }))
+    return data.proposals.map((p): GovernanceProposal => {
+      const id = Number(p.id)
+      if (!Number.isSafeInteger(id)) {
+        throw new Error(`Proposal ID ${p.id} exceeds safe integer range`)
+      }
+
+      const votingStartTime = new Date(p.voting_start_time)
+      const votingEndTime = new Date(p.voting_end_time)
+      if (isNaN(votingStartTime.getTime()) || isNaN(votingEndTime.getTime())) {
+        throw new Error(`Proposal ${p.id} has invalid voting time`)
+      }
+
+      return {
+        id,
+        title: p.title ?? '',
+        summary: p.summary ?? '',
+        status: mapLcdStatus(p.status),
+        votingStartTime,
+        votingEndTime,
+      }
+    })
   }
 
   async buildVoteTx(
