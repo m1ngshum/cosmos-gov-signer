@@ -6,6 +6,7 @@ export type ApprovalStatus =
   | 'scheduled'
   | 'pending_approval'
   | 'ready'
+  | 'signing'
   | 'signed'
   | 'cancelled'
   | 'expired'
