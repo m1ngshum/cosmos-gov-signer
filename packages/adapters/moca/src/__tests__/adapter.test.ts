@@ -123,6 +123,19 @@ describe('MocaChainAdapter', () => {
       expect(result).toBeInstanceOf(Uint8Array)
       expect(result.length).toBeGreaterThan(0)
     })
+
+    it('threads metadata URL into encoded proto bytes', async () => {
+      const adapter = makeAdapter()
+      const bytes = await adapter.buildSubmitProposalTx(
+        { title: 'T', summary: 'S', type: 'text', metadata: 'ipfs://Qm123' },
+        '1000000',
+        '0x000000000000000000000000000000000000dEaD',
+      )
+      const decoded = MsgSubmitProposal.decode(bytes)
+      expect(decoded.metadata).toBe('ipfs://Qm123')
+      expect(decoded.title).toBe('T')
+      expect(decoded.summary).toBe('S')
+    })
   })
 
   describe('broadcastTx', () => {
@@ -188,23 +201,5 @@ describe('MocaChainAdapter', () => {
       const address = adapter.deriveAddress(pubkey)
       expect(address.startsWith('moca1')).toBe(true)
     })
-  })
-})
-
-describe('MocaChainAdapter.buildSubmitProposalTx', () => {
-  it('threads metadata URL into encoded proto bytes', async () => {
-    const adapter = new MocaChainAdapter({
-      rpcEndpoint: 'http://fake',
-      lcdEndpoint: 'http://fake',
-    })
-    const bytes = await adapter.buildSubmitProposalTx(
-      { title: 'T', summary: 'S', type: 'text', metadata: 'ipfs://Qm123' },
-      '1000000',
-      '0x000000000000000000000000000000000000dEaD',
-    )
-    const decoded = MsgSubmitProposal.decode(bytes)
-    expect(decoded.metadata).toBe('ipfs://Qm123')
-    expect(decoded.title).toBe('T')
-    expect(decoded.summary).toBe('S')
   })
 })
