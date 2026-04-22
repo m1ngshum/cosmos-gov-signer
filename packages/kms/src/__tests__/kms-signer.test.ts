@@ -37,12 +37,28 @@ function makeSpki(): Uint8Array {
   )
 }
 
-const mockSend = vi.fn()
+// vi.mock is hoisted — any symbols its factory references must be declared
+// inside vi.hoisted() so they exist when the factory runs. vitest 4 tightened
+// this: the factory must return constructable classes with proper prototype
+// semantics (v3's arrow-function-returning-object shape now fails with
+// "() => ({...}) is not a constructor"). SignCommand additionally needs to
+// be a spy because the test asserts toHaveBeenCalledWith on it.
+const { mockSend, SignCommandMock, GetPublicKeyCommandMock } = vi.hoisted(() => ({
+  mockSend: vi.fn(),
+  SignCommandMock: vi.fn(function (this: { input: unknown }, input: unknown) {
+    this.input = input
+  }),
+  GetPublicKeyCommandMock: vi.fn(function (this: { input: unknown }, input: unknown) {
+    this.input = input
+  }),
+}))
 
 vi.mock('@aws-sdk/client-kms', () => ({
-  KMSClient: vi.fn().mockImplementation(() => ({ send: mockSend })),
-  SignCommand: vi.fn().mockImplementation((input: unknown) => ({ input })),
-  GetPublicKeyCommand: vi.fn().mockImplementation((input: unknown) => ({ input })),
+  KMSClient: class {
+    send = mockSend
+  },
+  SignCommand: SignCommandMock,
+  GetPublicKeyCommand: GetPublicKeyCommandMock,
 }))
 
 // Import after mock setup
