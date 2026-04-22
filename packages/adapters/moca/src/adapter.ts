@@ -253,8 +253,8 @@ export class MocaChainAdapter implements ChainAdapter {
 
     const digest = computeMocaEip712Digest({
       cosmosChainId: input.chainId,
-      accountNumber: Number(input.accountNumber),
-      sequence: Number(input.sequence),
+      accountNumber: input.accountNumber,
+      sequence: input.sequence,
       bodyMessages: input.bodyMessages,
       fee: {
         amount: [{ denom: input.fee.denom, amount: input.fee.amount }],

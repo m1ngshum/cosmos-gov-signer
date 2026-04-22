@@ -86,8 +86,13 @@ export function buildEthermintSignature(
         matchRec = rec
         break
       }
-    } catch {
-      // skip
+    } catch (err) {
+      // Known: noble throws when the recovery point is not on the curve for
+      // this (sig, rec) combination. Any other error means the underlying
+      // crypto primitive is broken — surface it loudly.
+      if (!(err instanceof Error) || !/recover|point/i.test(err.message)) {
+        throw err
+      }
     }
   }
   if (matchRec === undefined) {

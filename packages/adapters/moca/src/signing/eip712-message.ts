@@ -16,8 +16,8 @@ export interface TypedDataMessageInput {
   }
   memo: string
   timeoutHeight: string
-  accountNumber: number
-  sequence: number
+  accountNumber: number | bigint
+  sequence: number | bigint
   chainIdEvm: number
   /** 0x-prefixed hex address of the primary signer. Used to simulate the chain's
    *  FeePayer() fallback when AuthInfo.Fee.Payer is empty: chain returns the
@@ -30,7 +30,11 @@ export interface TypedDataMessageInput {
 export function parseEvmChainId(cosmosChainId: string): number {
   const m = cosmosChainId.match(/_(\d+)-\d+$/)
   if (!m) throw new Error(`cannot parse EVM chain id from ${cosmosChainId}`)
-  return Number(m[1])
+  const n = Number(m[1])
+  if (!Number.isInteger(n) || n <= 0 || n > Number.MAX_SAFE_INTEGER) {
+    throw new Error(`invalid EVM chain id ${m[1]} parsed from ${cosmosChainId}`)
+  }
+  return n
 }
 
 export function buildDomain(chainIdEvm: number): TypedDataDomain {
