@@ -18,6 +18,11 @@ export interface ProposalContent {
   readonly title: string
   readonly summary: string
   readonly type: string
+  /** Optional off-chain metadata URL (e.g. ipfs://..., https://...). MOCA's
+   *  gov module accepts a proposal as valid if either `metadata` is set OR
+   *  `messages` contains at least one executable msg. Without one, tx
+   *  broadcasts fail with code=11 "either metadata or Msgs length must be
+   *  non-nil". See moca-cosmos-sdk/x/gov/types/v1/msgs.go. */
   readonly metadata?: string
 }
 
