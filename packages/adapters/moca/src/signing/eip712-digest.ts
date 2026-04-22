@@ -1,5 +1,6 @@
 import { hashTypedData, type TypedDataParameter } from 'viem'
 
+import { TYPE_URLS } from '../proto.js'
 import {
   COMMON_TYPES,
   EIP712_DOMAIN_TYPE,
@@ -25,7 +26,7 @@ function buildAllMsgTypes(bodyMessages: CosmosMsgJson[]): Record<string, TypedDa
   bodyMessages.forEach((msg, i) => {
     const index = i + 1
     const hasNestedMessages =
-      msg['@type'] === '/cosmos.gov.v1.MsgSubmitProposal' &&
+      msg['@type'] === TYPE_URLS.msgSubmitProposal &&
       Array.isArray(msg['messages']) &&
       (msg['messages'] as unknown[]).length > 0
     const perMsgTypes = buildMsgTypesForIndex(msg['@type'], index, { hasNestedMessages })
@@ -40,9 +41,9 @@ function buildAllMsgTypes(bodyMessages: CosmosMsgJson[]): Record<string, TypedDa
  *  (MsgExec.msgs, MsgSubmitProposal.messages when non-empty). */
 function needsTypeAny(bodyMessages: CosmosMsgJson[]): boolean {
   return bodyMessages.some((msg) => {
-    if (msg['@type'] === '/cosmos.authz.v1beta1.MsgExec') return true
+    if (msg['@type'] === TYPE_URLS.msgExec) return true
     if (
-      msg['@type'] === '/cosmos.gov.v1.MsgSubmitProposal' &&
+      msg['@type'] === TYPE_URLS.msgSubmitProposal &&
       Array.isArray(msg['messages']) &&
       (msg['messages'] as unknown[]).length > 0
     ) return true

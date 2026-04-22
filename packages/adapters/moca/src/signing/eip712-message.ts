@@ -1,4 +1,5 @@
 import type { TypedDataDomain } from 'viem'
+import { TYPE_URLS } from '../proto.js'
 
 export interface CosmosMsgJson {
   '@type': string
@@ -140,11 +141,11 @@ export function jsonStringifySorted(value: unknown): string {
 export function buildPerMsgValue(msg: CosmosMsgJson): Record<string, unknown> {
   const typeUrl = msg['@type']
   switch (typeUrl) {
-    case '/cosmos.gov.v1.MsgSubmitProposal':
+    case TYPE_URLS.msgSubmitProposal:
       return buildMsgSubmitProposalValue(msg)
-    case '/cosmos.gov.v1.MsgVote':
+    case TYPE_URLS.msgVote:
       return buildMsgVoteValue(msg)
-    case '/cosmos.authz.v1beta1.MsgExec':
+    case TYPE_URLS.msgExec:
       return buildMsgExecValue(msg)
     default:
       throw new Error(`Unhandled msg type ${typeUrl}`)
@@ -202,7 +203,7 @@ function wrapAsTypeAny(msg: CosmosMsgJson): { type: string; value: Uint8Array } 
  *  Must mirror jsonpb (EmitDefaults: true, OrigName: true) output exactly. */
 function normaliseInnerMsg(msg: CosmosMsgJson): Record<string, unknown> {
   switch (msg['@type']) {
-    case '/cosmos.gov.v1.MsgVote':
+    case TYPE_URLS.msgVote:
       return {
         '@type': msg['@type'],
         metadata: String(msg['metadata'] ?? ''),

@@ -1,4 +1,5 @@
 import type { TypedDataParameter } from 'viem'
+import { TYPE_URLS } from '../proto.js'
 
 // EIP712Domain field order matches chain's sort.Slice(alphabetical) output.
 // See docs/debug/typed-flowc-chain-reference.json.
@@ -45,11 +46,11 @@ export function buildMsgTypesForIndex(
   options: BuildMsgSchemaOptions = {},
 ): Record<string, TypedDataParameter[]> {
   switch (typeUrl) {
-    case '/cosmos.gov.v1.MsgSubmitProposal':
+    case TYPE_URLS.msgSubmitProposal:
       return buildMsgSubmitProposalTypes(index, options)
-    case '/cosmos.gov.v1.MsgVote':
+    case TYPE_URLS.msgVote:
       return buildMsgVoteTypes(index)
-    case '/cosmos.authz.v1beta1.MsgExec':
+    case TYPE_URLS.msgExec:
       return buildMsgExecTypes(index)
     default:
       throw new Error(
@@ -72,11 +73,11 @@ function buildMsgSubmitProposalTypes(
     { name: 'title', type: 'string' },
     { name: 'type', type: 'string' },
   ]
-  if (hasNestedMessages) {
-    fields.push({ name: 'messages', type: 'TypeAny[]' })
-  }
+  const allFields = hasNestedMessages
+    ? [...fields, { name: 'messages', type: 'TypeAny[]' } as TypedDataParameter]
+    : fields
   return {
-    [`Msg${index}`]: fields.sort((a, b) => a.name.localeCompare(b.name)),
+    [`Msg${index}`]: [...allFields].sort((a, b) => a.name.localeCompare(b.name)),
     [depositTypeName]: [
       { name: 'amount', type: 'string' },
       { name: 'denom', type: 'string' },
