@@ -25,7 +25,9 @@
     "@cosmjs/proto-signing": "^0.38.1",
     "@cosmjs/stargate": "^0.38.1",
     "@cosmjs/tendermint-rpc": "^0.38.1",
+    "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.0.1",
-    "cosmjs-types": "^0.11.0"
+    "cosmjs-types": "^0.11.0",
+    "viem": "^2.48.4"
   }
 }

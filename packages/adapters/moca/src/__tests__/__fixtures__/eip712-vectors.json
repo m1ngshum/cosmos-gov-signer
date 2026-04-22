@@ -1,0 +1,94 @@
+{
+  "flow_c_submit_proposal": {
+    "chain_id": "moca_5151-1",
+    "account_number": 70,
+    "sequence": 2,
+    "unsigned_tx": {
+      "body": {
+        "messages": [
+          {
+            "@type": "/cosmos.gov.v1.MsgSubmitProposal",
+            "messages": [],
+            "initial_deposit": [
+              {
+                "denom": "amoca",
+                "amount": "10000000"
+              }
+            ],
+            "proposer": "0x195A190FCd48e939F0E33A68eDDE28b4269000a2",
+            "metadata": "",
+            "title": "fixture-test",
+            "summary": "fixture-test",
+            "expedited": false
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [],
+        "fee": {
+          "amount": [
+            {
+              "denom": "amoca",
+              "amount": "200000000000000"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        },
+        "tip": null
+      },
+      "signatures": []
+    },
+    "expected_digest_hex": "28d931ec15dc12eb6e57ab2e21957850e90b06c74dfd1113ac2d2408d26410c0"
+  },
+  "flow_a_vote_authz_exec": {
+    "chain_id": "moca_5151-1",
+    "account_number": 70,
+    "sequence": 0,
+    "unsigned_tx": {
+      "body": {
+        "messages": [
+          {
+            "@type": "/cosmos.authz.v1beta1.MsgExec",
+            "grantee": "0x701F3407DeA5BD304bFeE24607649Ea6b3115F84",
+            "msgs": [
+              {
+                "@type": "/cosmos.gov.v1.MsgVote",
+                "proposal_id": "1",
+                "voter": "0x2356C7fC033d025a7653E25251aD8fbA788A46D9",
+                "option": "VOTE_OPTION_NO",
+                "metadata": ""
+              }
+            ]
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [],
+        "fee": {
+          "amount": [
+            {
+              "denom": "amoca",
+              "amount": "200000000000000"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        },
+        "tip": null
+      },
+      "signatures": []
+    },
+    "expected_digest_hex": "1e494df00225e5fa1257a923c036bb41bdc59e84ed4e39b23ef103c72b79538b"
+  }
+}

@@ -9,6 +9,13 @@ import { MsgVote, MsgSubmitProposal } from 'cosmjs-types/cosmos/gov/v1/tx'
 import { MsgExec } from 'cosmjs-types/cosmos/authz/v1beta1/tx'
 import { toProtoVoteOption, TYPE_URLS } from './proto.js'
 import { deriveAddress } from './address.js'
+import {
+  assembleTxRaw,
+  buildEthermintSignature,
+  buildTxParts,
+  computeMocaEip712Digest,
+  type CosmosMsgJson,
+} from './signing/index.js'
 
 export interface MocaAdapterConfig {
   readonly rpcEndpoint: string
@@ -193,5 +200,79 @@ export class MocaChainAdapter implements ChainAdapter {
 
   deriveAddress(publicKey: Buffer): string {
     return deriveAddress(new Uint8Array(publicKey), this.addressPrefix)
+  }
+
+  /** Sign a cosmos-sdk tx using MOCA's forced EIP-712 path.
+   *
+   *  The chain verifies signatures against an EIP-712 typed-data digest
+   *  regardless of the declared SignMode (see moca-cosmos-sdk's
+   *  GetSignBytesAdapter at x/auth/signing/adapter.go:56-100). This method
+   *  builds the exact typed-data the chain reconstructs, delegates the
+   *  hash to an external signer (typically AWS KMS), appends the recovery
+   *  byte, and assembles a broadcast-ready TxRaw.
+   *
+   *  `signDigest` receives the 32-byte keccak digest and must return a
+   *  64-byte compact ECDSA (R || S) signature. KMS callers can wrap
+   *  `signWithKMS` from @cosmos-gov-signer/kms. */
+  async signTx(input: {
+    /** Inner cosmos message, already proto-encoded via buildVoteTx /
+     *  buildSubmitProposalTx. Written verbatim into the TxBody. */
+    readonly innerMsg: { typeUrl: string; value: Uint8Array }
+    /** JSON representation of the body messages used by the EIP-712 type
+     *  builder. Must describe the same semantic tx as `innerMsg`. */
+    readonly bodyMessages: CosmosMsgJson[]
+    /** 64-byte raw (X || Y) secp256k1 pubkey of the signer. */
+    readonly signerPubkey: Uint8Array
+    /** 0x-hex (20-byte) address of the signer — also used as the fee-payer
+     *  fallback per MOCA's FeePayer() semantics. */
+    readonly signerAddressHex: string
+    readonly accountNumber: bigint
+    readonly sequence: bigint
+    readonly chainId: string
+    readonly fee: {
+      readonly denom: string
+      readonly amount: string
+      readonly gasLimit: bigint
+    }
+    readonly memo?: string
+    /** External 64-byte (R||S) signer over a 32-byte keccak digest. */
+    readonly signDigest: (digest: Uint8Array) => Promise<Uint8Array>
+  }): Promise<Uint8Array> {
+    const parts = buildTxParts({
+      innerMsg: input.innerMsg,
+      signerPubkey: input.signerPubkey,
+      sequence: input.sequence,
+      accountNumber: input.accountNumber,
+      chainId: input.chainId,
+      fee: {
+        amount: [{ denom: input.fee.denom, amount: input.fee.amount }],
+        gasLimit: input.fee.gasLimit,
+      },
+      memo: input.memo,
+    })
+
+    const digest = computeMocaEip712Digest({
+      cosmosChainId: input.chainId,
+      accountNumber: Number(input.accountNumber),
+      sequence: Number(input.sequence),
+      bodyMessages: input.bodyMessages,
+      fee: {
+        amount: [{ denom: input.fee.denom, amount: input.fee.amount }],
+        gas_limit: String(input.fee.gasLimit),
+        payer: '',
+        granter: '',
+      },
+      memo: input.memo ?? '',
+      timeoutHeight: '0',
+      signerAddressHex: input.signerAddressHex,
+    })
+
+    const rsSignature = await input.signDigest(digest)
+    const signature = buildEthermintSignature(rsSignature, digest, input.signerPubkey)
+    return assembleTxRaw({
+      bodyBytes: parts.bodyBytes,
+      authInfoBytes: parts.authInfoBytes,
+      signature,
+    })
   }
 }
