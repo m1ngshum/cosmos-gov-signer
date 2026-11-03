@@ -1,4 +1,4 @@
-# @cosmos-gov-signer/core
+# @m1ngshum/cosmos-gov-signer-core
 
 Pure types, interfaces, and signing gate logic. Zero runtime dependencies.
 
@@ -26,8 +26,8 @@ Pure types, interfaces, and signing gate logic. Zero runtime dependencies.
 ## Usage
 
 ```typescript
-import { evaluateSigningGate } from '@cosmos-gov-signer/core'
-import type { SigningGateContext } from '@cosmos-gov-signer/core'
+import { evaluateSigningGate } from '@m1ngshum/cosmos-gov-signer-core'
+import type { SigningGateContext } from '@m1ngshum/cosmos-gov-signer-core'
 
 const ctx: SigningGateContext = {
   record: approvalRecord,

@@ -1,4 +1,4 @@
-# @cosmos-gov-signer/kms
+# @m1ngshum/cosmos-gov-signer-kms
 
 AWS KMS signing and public key extraction for secp256k1 keys. Converts KMS DER-encoded responses to the 64-byte compact format expected by Cosmos chains.
 
@@ -16,7 +16,7 @@ Zero Cosmos dependencies — this package only knows about KMS and raw bytes.
 ## Usage
 
 ```typescript
-import { signWithKMS, getKMSPublicKey } from '@cosmos-gov-signer/kms'
+import { signWithKMS, getKMSPublicKey } from '@m1ngshum/cosmos-gov-signer-kms'
 
 // Get the public key
 const pubkey = await getKMSPublicKey('alias/gov-vote-key', 'ap-southeast-1')

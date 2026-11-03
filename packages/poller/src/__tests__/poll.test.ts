@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { ChainAdapter, GovernanceProposal } from '@cosmos-gov-signer/core'
+import type { ChainAdapter, GovernanceProposal } from '@m1ngshum/cosmos-gov-signer-core'
 import { pollProposals } from '../poll.js'
 
 function makeProposal(overrides: Partial<GovernanceProposal> = {}): GovernanceProposal {

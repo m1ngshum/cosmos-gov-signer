@@ -1,4 +1,4 @@
-import type { VoteOption } from '@cosmos-gov-signer/core'
+import type { VoteOption } from '@m1ngshum/cosmos-gov-signer-core'
 import { VoteOption as ProtoVoteOption } from 'cosmjs-types/cosmos/gov/v1/gov'
 
 /** Map our string vote options to protobuf numeric values */

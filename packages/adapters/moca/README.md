@@ -1,10 +1,10 @@
-# @cosmos-gov-signer/adapter-moca
+# @m1ngshum/cosmos-gov-signer-adapter-moca
 
 ChainAdapter implementation for MOCA chain (`moca_222888-1`), an Evmos v12 fork using `ethsecp256k1`.
 
 ## Exports
 
-- `MocaChainAdapter` — Implements `ChainAdapter` from `@cosmos-gov-signer/core`
+- `MocaChainAdapter` — Implements `ChainAdapter` from `@m1ngshum/cosmos-gov-signer-core`
 - `deriveAddress(pubkey, prefix)` — Derive bech32 address from ethsecp256k1 public key
 - `toProtoVoteOption(option)` — Map string vote options to protobuf enum values
 - `TYPE_URLS` — Protobuf type URLs for gov v1 and authz messages
@@ -12,7 +12,7 @@ ChainAdapter implementation for MOCA chain (`moca_222888-1`), an Evmos v12 fork 
 ## Usage
 
 ```typescript
-import { MocaChainAdapter } from '@cosmos-gov-signer/adapter-moca'
+import { MocaChainAdapter } from '@m1ngshum/cosmos-gov-signer-adapter-moca'
 
 const adapter = new MocaChainAdapter({
   rpcEndpoint: process.env.MOCA_RPC_ENDPOINT,
@@ -43,7 +43,7 @@ const submitBytes = await adapter.buildSubmitProposalTx(
 MOCA uses Ethereum-style address derivation: `keccak256(uncompressed_pubkey) → last 20 bytes → bech32('moca', ...)`.
 
 ```typescript
-import { deriveAddress } from '@cosmos-gov-signer/adapter-moca'
+import { deriveAddress } from '@m1ngshum/cosmos-gov-signer-adapter-moca'
 
 const address = deriveAddress(pubkey64Bytes, 'moca')
 // → 'moca1...'

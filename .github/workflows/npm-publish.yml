@@ -63,5 +63,5 @@ jobs:
       - name: Publish public packages
         run: |
           for package in core kms poller adapter-moca; do
-            npm publish release/cosmos-gov-signer-"$package"-*.tgz --access public --ignore-scripts --registry https://registry.npmjs.org
+            npm publish release/m1ngshum-cosmos-gov-signer-"$package"-*.tgz --access public --ignore-scripts --registry https://registry.npmjs.org
           done

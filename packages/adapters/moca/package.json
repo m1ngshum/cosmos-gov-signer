@@ -1,5 +1,5 @@
 {
-  "name": "@cosmos-gov-signer/adapter-moca",
+  "name": "@m1ngshum/cosmos-gov-signer-adapter-moca",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -26,7 +26,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@cosmos-gov-signer/core": "workspace:*",
+    "@m1ngshum/cosmos-gov-signer-core": "workspace:*",
     "@cosmjs/encoding": "^0.38.1",
     "@cosmjs/proto-signing": "^0.38.1",
     "@cosmjs/stargate": "^0.38.1",

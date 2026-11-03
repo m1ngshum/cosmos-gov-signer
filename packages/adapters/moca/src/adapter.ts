@@ -3,7 +3,7 @@ import type {
   GovernanceProposal,
   ProposalContent,
   VoteOption,
-} from '@cosmos-gov-signer/core'
+} from '@m1ngshum/cosmos-gov-signer-core'
 import { Registry } from '@cosmjs/proto-signing'
 import { MsgVote, MsgSubmitProposal } from 'cosmjs-types/cosmos/gov/v1/tx'
 import { MsgExec } from 'cosmjs-types/cosmos/authz/v1beta1/tx'
@@ -213,7 +213,7 @@ export class MocaChainAdapter implements ChainAdapter {
    *
    *  `signDigest` receives the 32-byte keccak digest and must return a
    *  64-byte compact ECDSA (R || S) signature. KMS callers can wrap
-   *  `signWithKMS` from @cosmos-gov-signer/kms. */
+   *  `signWithKMS` from @m1ngshum/cosmos-gov-signer-kms. */
   async signTx(input: {
     /** Inner cosmos message, already proto-encoded via buildVoteTx /
      *  buildSubmitProposalTx. Written verbatim into the TxBody. */

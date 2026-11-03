@@ -1,4 +1,4 @@
-import type { ChainAdapter, GovernanceProposal } from '@cosmos-gov-signer/core'
+import type { ChainAdapter, GovernanceProposal } from '@m1ngshum/cosmos-gov-signer-core'
 
 /**
  * Fetch active governance proposals and invoke a callback for each one

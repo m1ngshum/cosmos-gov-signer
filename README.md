@@ -30,10 +30,10 @@ packages/
 
 | Package | Description | Dependencies |
 |---------|-------------|-------------|
-| `@cosmos-gov-signer/core` | Types, `ChainAdapter` interface, `evaluateSigningGate` | None |
-| `@cosmos-gov-signer/kms` | `signWithKMS`, `getKMSPublicKey`, DER decoding | `@aws-sdk/client-kms` |
-| `@cosmos-gov-signer/adapter-moca` | `MocaChainAdapter` implementation | `core`, cosmjs, `@noble/hashes` |
-| `@cosmos-gov-signer/poller` | `pollProposals` function | `core` |
+| `@m1ngshum/cosmos-gov-signer-core` | Types, `ChainAdapter` interface, `evaluateSigningGate` | None |
+| `@m1ngshum/cosmos-gov-signer-kms` | `signWithKMS`, `getKMSPublicKey`, DER decoding | `@aws-sdk/client-kms` |
+| `@m1ngshum/cosmos-gov-signer-adapter-moca` | `MocaChainAdapter` implementation | `core`, cosmjs, `@noble/hashes` |
+| `@m1ngshum/cosmos-gov-signer-poller` | `pollProposals` function | `core` |
 
 ## Setup
 
@@ -61,7 +61,7 @@ CI builds, typechecks, tests, and packs all four packages on pull requests and
 pushes to `main`. pnpm packs the packages so their `workspace:*` dependencies
 are converted to npm versions.
 
-Before the first release, confirm you control the `@cosmos-gov-signer` npm scope.
+Before the first release, sign in to npm as `m1ngshum` and verify with `npm whoami`.
 npm Trusted Publishing is configured on existing packages, so bootstrap any
 missing packages once using an authorized npm account. Build and pack the
 reviewed release using the workflow's pack step, then publish the resulting
