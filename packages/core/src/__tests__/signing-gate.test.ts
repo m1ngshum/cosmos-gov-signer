@@ -32,12 +32,12 @@ describe('evaluateSigningGate', () => {
       expect(result).toEqual({ approved: true })
     })
 
-    it('approves ready even if voting period has expired', () => {
+    it('rejects ready if the voting period has expired', () => {
       const result = evaluateSigningGate(makeCtx({
         status: 'ready',
         votingEndTime: new Date('2026-01-10T00:00:00Z'),
       }))
-      expect(result).toEqual({ approved: true })
+      expect(result).toEqual({ approved: false, reason: 'voting_period_expired' })
     })
 
     it('rejects ready if txHash already exists', () => {
@@ -57,6 +57,17 @@ describe('evaluateSigningGate', () => {
         overrideWindowEndsAt: new Date('2026-01-15T10:00:00Z'),
       }))
       expect(result).toEqual({ approved: true })
+    })
+
+    it.each([
+      [{ votingEndTime: new Date('2026-01-15T11:00:00Z') }, 'voting_period_expired'],
+      [{ txHash: '0xabc' }, 'already_signed'],
+    ] as const)('rejects an otherwise eligible auto-vote with %j', (record, reason) => {
+      const result = evaluateSigningGate(makeCtx({
+        overrideWindowEndsAt: new Date('2026-01-15T10:00:00Z'),
+        ...record,
+      }))
+      expect(result).toEqual({ approved: false, reason })
     })
 
     it('does not approve if override window has not expired', () => {
