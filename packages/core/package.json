@@ -2,6 +2,12 @@
   "name": "@cosmos-gov-signer/core",
   "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m1ngshum/cosmos-gov-signer.git",
+    "directory": "packages/core"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
