@@ -15,7 +15,7 @@ Validator Operator Key (cold)
                                     └── Signs MsgSubmitProposal directly
 ```
 
-**Default behavior:** auto-votes NO on every new governance proposal. Approvers can override within a configurable window before the vote is signed and broadcast.
+**Example integration policy:** A consuming application can schedule a NO vote for each new governance proposal and let approvers override it before signing. The poller only calls the application back for active proposals; the application handles scheduling, approvals, signing, and broadcasting.
 
 ## Packages
 
@@ -47,12 +47,13 @@ Use Node.js 24 and pnpm 10 for local development, matching CI.
 
 ## Signing Gate
 
-All signing operations pass through `evaluateSigningGate` before any KMS call:
+Call `evaluateSigningGate` before requesting a KMS signature. The signing
+APIs do not call the gate themselves. The application must validate approvals
+before setting a record to `ready`; the gate does not count approvals.
 
-1. Record status is `ready` (K-of-N threshold met)
-2. Auto-vote: override window expired + still `scheduled`
-3. Rejects if voting period has passed
-4. Rejects if already signed (idempotency)
+The gate rejects records whose voting period has passed or that already have
+a transaction hash. It then allows `ready` records and scheduled auto-votes
+whose override window has passed. All other records are rejected.
 
 ## npm releases
 
@@ -75,9 +76,16 @@ After bootstrapping, bump the versions of all four packages together, merge
 the release changes, and run **npm release** manually from `main`. The publish
 job uses OIDC and needs no npm token secret. Configure trust when ready to
 publish: npm expires the initial configuration if no successful publish occurs
-within two days. Publishing is sequential: if a run
-fails after any package goes live, check the registry before retrying. npm
-versions cannot be overwritten.
+within two days.
+
+If a publish run fails, use `npm view <package>@<version> version` against the
+public registry to confirm which versions landed. Once any package is live,
+rerunning the workflow will stop at the first already published version.
+Download the `npm-packages` artifact from the failed run and, after resolving
+the failure, use an authorized npm account to publish only the missing,
+reviewed tarballs in the order above. If those exact tarballs cannot be
+verified or need changes, prepare a new coordinated version for all four
+packages. Published versions cannot be overwritten.
 
 ## License
 
