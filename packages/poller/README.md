@@ -1,12 +1,12 @@
-# @cosmos-gov-signer/poller
+# @m1ngshum/cosmos-gov-signer-poller
 
 Stateless governance proposal poller. Fetches active proposals via a `ChainAdapter` and invokes a callback for each one in `VOTING_PERIOD`.
 
 ## Usage
 
 ```typescript
-import { pollProposals } from '@cosmos-gov-signer/poller'
-import { MocaChainAdapter } from '@cosmos-gov-signer/adapter-moca'
+import { pollProposals } from '@m1ngshum/cosmos-gov-signer-poller'
+import { MocaChainAdapter } from '@m1ngshum/cosmos-gov-signer-adapter-moca'
 
 const adapter = new MocaChainAdapter({ rpcEndpoint: '...', lcdEndpoint: '...' })
 

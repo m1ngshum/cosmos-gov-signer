@@ -1,5 +1,5 @@
 {
-  "name": "@cosmos-gov-signer/poller",
+  "name": "@m1ngshum/cosmos-gov-signer-poller",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -24,6 +24,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@cosmos-gov-signer/core": "workspace:*"
+    "@m1ngshum/cosmos-gov-signer-core": "workspace:*"
   }
 }

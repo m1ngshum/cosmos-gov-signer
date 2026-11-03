@@ -1,5 +1,5 @@
 {
-  "name": "@cosmos-gov-signer/kms",
+  "name": "@m1ngshum/cosmos-gov-signer-kms",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",

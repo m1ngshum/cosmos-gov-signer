@@ -38,7 +38,7 @@ importers:
       '@cosmjs/tendermint-rpc':
         specifier: ^0.38.1
         version: 0.38.1
-      '@cosmos-gov-signer/core':
+      '@m1ngshum/cosmos-gov-signer-core':
         specifier: workspace:*
         version: link:../../core
       '@noble/curves':
@@ -68,7 +68,7 @@ importers:
 
   packages/poller:
     dependencies:
-      '@cosmos-gov-signer/core':
+      '@m1ngshum/cosmos-gov-signer-core':
         specifier: workspace:*
         version: link:../core
 
