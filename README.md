@@ -43,7 +43,7 @@ pnpm build
 pnpm test
 ```
 
-Use Node.js 24 and pnpm 10 for local development, matching CI.
+Use Node.js 26 and pnpm 12 for local development, matching CI.
 
 ## Signing Gate
 
