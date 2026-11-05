@@ -27,13 +27,13 @@
   },
   "dependencies": {
     "@m1ngshum/cosmos-gov-signer-core": "workspace:*",
-    "@cosmjs/encoding": "^0.38.1",
-    "@cosmjs/proto-signing": "^0.38.1",
-    "@cosmjs/stargate": "^0.38.1",
-    "@cosmjs/tendermint-rpc": "^0.38.1",
-    "@noble/curves": "^2.2.0",
-    "@noble/hashes": "^2.0.1",
+    "@cosmjs/encoding": "^0.39.0",
+    "@cosmjs/proto-signing": "^0.39.0",
+    "@cosmjs/stargate": "^0.39.0",
+    "@cosmjs/tendermint-rpc": "^0.39.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
     "cosmjs-types": "^0.11.0",
-    "viem": "^2.57.15"
+    "viem": "^2.57.16"
   }
 }
