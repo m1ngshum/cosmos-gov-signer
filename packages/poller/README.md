@@ -1,24 +1,45 @@
 # @m1ngshum/cosmos-gov-signer-poller
 
-Stateless governance proposal poller. Fetches active proposals via a `ChainAdapter` and invokes a callback for each one in `VOTING_PERIOD`.
+A stateless, single-pass governance proposal poller. It fetches proposals through a `ChainAdapter` and awaits a callback for each proposal whose status is `VOTING_PERIOD`.
 
-## Usage
+## Install
+
+```bash
+npm install @m1ngshum/cosmos-gov-signer-poller @m1ngshum/cosmos-gov-signer-adapter-moca
+```
+
+The adapter is needed for the MOCA example below; applications can supply any implementation of `ChainAdapter`. The package exposes ES module imports and TypeScript declarations.
+
+## Example
+
+Call this function with your RPC/LCD endpoints and application callback. It makes an LCD request when invoked; it does not sign or broadcast.
 
 ```typescript
 import { pollProposals } from '@m1ngshum/cosmos-gov-signer-poller'
 import { MocaChainAdapter } from '@m1ngshum/cosmos-gov-signer-adapter-moca'
 
-const adapter = new MocaChainAdapter({ rpcEndpoint: '...', lcdEndpoint: '...' })
-
-await pollProposals(adapter, async (proposal) => {
-  // Check if we already have an ApprovalRecord for this proposal
-  // If not, create a new auto-NO record
-  console.log(`New proposal: #${proposal.id} - ${proposal.title}`)
-})
+export async function scanProposals(
+  rpcEndpoint: string,
+  lcdEndpoint: string,
+  onProposal: Parameters<typeof pollProposals>[1],
+) {
+  const adapter = new MocaChainAdapter({ rpcEndpoint, lcdEndpoint })
+  await pollProposals(adapter, onProposal)
+}
 ```
 
-## Design
+## Behavior
 
-- **Stateless**: No internal tracking of seen proposals. The caller (API layer) handles deduplication.
-- **Single invocation**: Not a loop. Designed to be called by a scheduler (e.g. EventBridge every 5 minutes).
-- **Filters by status**: Only calls the callback for proposals with status `VOTING_PERIOD`.
+`pollProposals(adapter, onProposal): Promise<void>` is the only public export.
+
+- Calls `adapter.fetchActiveProposals()` once per invocation.
+- Filters by status, not by the local clock or proposal voting dates.
+- Awaits callbacks sequentially in the order returned by the adapter.
+- Resolves without invoking the callback if no proposal matches.
+- Propagates fetch and callback errors. A rejected callback stops that invocation; later proposals are not processed, while earlier callbacks may already have completed.
+
+There is no timer, retry loop, persistent state, or built-in auto-vote policy. Invoke it from your own scheduler and handle failures there.
+
+The callback can receive the same proposal on every poll. Use durable, atomic deduplication keyed by chain and proposal ID before creating an approval record. Retrying a failed poll can repeat callbacks that already succeeded.
+
+Pagination belongs to the adapter. The current MOCA adapter reads one LCD response and does not follow pagination tokens, so this poller cannot guarantee discovery of proposals on subsequent pages.
