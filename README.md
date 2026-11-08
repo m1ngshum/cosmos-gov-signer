@@ -90,3 +90,7 @@ packages. Published versions cannot be overwritten.
 ## License
 
 MIT
+
+## Contact
+
+For general enquiries, contact [hello@m1ngshum.com](mailto:hello@m1ngshum.com).
