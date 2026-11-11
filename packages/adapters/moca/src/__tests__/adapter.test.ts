@@ -5,6 +5,7 @@ import { MocaChainAdapter } from '../adapter.js'
 const mockFetch = vi.fn()
 
 beforeEach(() => {
+  mockFetch.mockReset()
   vi.stubGlobal('fetch', mockFetch)
 })
 
@@ -28,6 +29,53 @@ describe('MocaChainAdapter', () => {
   })
 
   describe('fetchActiveProposals', () => {
+    it('follows encoded continuation keys and returns every page in order', async () => {
+      const proposal = (id: string) => ({
+        id, title: id, summary: '', status: 'PROPOSAL_STATUS_VOTING_PERIOD',
+        voting_start_time: '2026-01-01', voting_end_time: '2026-01-15',
+      })
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({
+        proposals: [proposal('1')], pagination: { next_key: 'a+/=' },
+      }) }).mockResolvedValueOnce({ ok: true, json: async () => ({
+        proposals: [proposal('2')], pagination: { next_key: '' },
+      }) })
+      expect((await makeAdapter().fetchActiveProposals()).map(p => p.id)).toEqual([1, 2])
+      expect(mockFetch).toHaveBeenNthCalledWith(2,
+        'http://localhost:1317/cosmos/gov/v1/proposals?proposal_status=PROPOSAL_STATUS_VOTING_PERIOD&pagination.key=a%2B%2F%3D')
+    })
+
+    it('rejects a repeated continuation key instead of looping', async () => {
+      mockFetch.mockResolvedValue({ ok: true, json: async () => ({
+        proposals: [], pagination: { next_key: 'repeat' },
+      }) })
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('pagination')
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    it('rejects a multi-key pagination cycle', async () => {
+      for (const key of ['A', 'B', 'A']) {
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({
+          proposals: [], pagination: { next_key: key },
+        }) })
+      }
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('pagination')
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+    })
+
+    it('rejects a non-string continuation key', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({
+        proposals: [], pagination: { next_key: 42 },
+      }) })
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('pagination')
+    })
+
+    it('propagates a later page error without returning partial results', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({
+        proposals: [], pagination: { next_key: 'next' },
+      }) }).mockResolvedValueOnce({ ok: false, status: 500, statusText: 'Error' })
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('LCD query failed')
+    })
+
     it('fetches and maps proposals from LCD', async () => {
       const adapter = makeAdapter()
       mockFetch.mockResolvedValueOnce({

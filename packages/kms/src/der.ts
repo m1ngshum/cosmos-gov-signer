@@ -2,123 +2,75 @@ const DER_SEQUENCE_TAG = 0x30
 const DER_INTEGER_TAG = 0x02
 const DER_BITSTRING_TAG = 0x03
 
-/**
- * Read a DER tag and length at the given offset.
- * Returns the tag, the content length, and the offset after the length bytes.
- */
-function readTagAndLength(
-  buf: Uint8Array,
-  offset: number,
-): { tag: number; length: number; contentOffset: number } {
-  const tag = buf[offset]
-  let length = buf[offset + 1]
+function readTagAndLength(buf: Uint8Array, offset: number) {
+  if (offset + 2 > buf.length) throw new Error('Truncated DER header')
+  const tag = buf[offset]!
+  let length = buf[offset + 1]!
   let contentOffset = offset + 2
-
-  // Long-form length (first byte has high bit set, lower 7 bits = number of length bytes)
-  if (length === 0x80) {
-    throw new Error('DER indefinite-length form (0x80) is not permitted')
-  }
+  if (length === 0x80) throw new Error('DER indefinite-length form is not permitted')
   if (length > 0x80) {
-    const numLengthBytes = length & 0x7f
-    length = 0
-    for (let i = 0; i < numLengthBytes; i++) {
-      length = (length << 8) | buf[contentOffset + i]
+    const count = length & 0x7f
+    if (count > 4 || contentOffset + count > buf.length || buf[contentOffset] === 0) {
+      throw new Error('Invalid DER length')
     }
-    contentOffset += numLengthBytes
+    length = 0
+    for (let i = 0; i < count; i++) length = length * 256 + buf[contentOffset + i]!
+    contentOffset += count
+    if (length < 128) throw new Error('Noncanonical DER length')
   }
-
-  return { tag, length, contentOffset }
+  const end = contentOffset + length
+  if (end > buf.length) throw new Error('Truncated DER content')
+  return { tag, length, contentOffset, end }
 }
 
-/**
- * Write a DER integer normalized to exactly `size` bytes into `out` at `outOffset`.
- * DER integers may have a leading 0x00 pad (if high bit is set) or be shorter than `size`.
- */
-function writeNormalizedInteger(
-  der: Uint8Array, offset: number, length: number,
-  out: Uint8Array, outOffset: number, size: number,
-): void {
-  let start = offset
-  let len = length
-  while (len > size && der[start] === 0x00) {
-    start++
-    len--
+function readInteger(der: Uint8Array, offset: number): { value: Uint8Array; end: number } {
+  const part = readTagAndLength(der, offset)
+  if (part.tag !== DER_INTEGER_TAG) throw new Error('Expected DER INTEGER')
+  let bytes = der.subarray(part.contentOffset, part.end)
+  if (!bytes.length || (bytes[0]! & 0x80)) throw new Error('Expected positive DER integer')
+  if (bytes.length > 1 && bytes[0] === 0) {
+    if (!(bytes[1]! & 0x80)) throw new Error('Noncanonical DER integer padding')
+    bytes = bytes.subarray(1)
   }
-
-  const copyLen = Math.min(len, size)
-  out.set(der.subarray(start, start + copyLen), outOffset + size - copyLen)
+  if (bytes.length > 32 || bytes.every(byte => byte === 0)) {
+    throw new Error('DER integer must be nonzero and fit in 32 bytes')
+  }
+  const value = new Uint8Array(32)
+  value.set(bytes, 32 - bytes.length)
+  return { value, end: part.end }
 }
 
-/**
- * Decode a DER-encoded ECDSA signature into 64-byte compact r || s format.
- *
- * DER structure:
- *   SEQUENCE { INTEGER r, INTEGER s }
- */
+/** Convert a complete canonical DER ECDSA signature to 64-byte r || s. */
 export function decodeDerSignature(der: Uint8Array): Uint8Array {
   const seq = readTagAndLength(der, 0)
-  if (seq.tag !== DER_SEQUENCE_TAG) {
-    throw new Error(`Expected DER SEQUENCE (0x30), got 0x${seq.tag.toString(16)}`)
-  }
-
-  // Read r
-  const rHeader = readTagAndLength(der, seq.contentOffset)
-  if (rHeader.tag !== DER_INTEGER_TAG) {
-    throw new Error(`Expected DER INTEGER (0x02) for r, got 0x${rHeader.tag.toString(16)}`)
-  }
+  if (seq.tag !== DER_SEQUENCE_TAG) throw new Error('Expected DER SEQUENCE')
+  if (seq.end !== der.length) throw new Error('Trailing DER signature data')
+  const r = readInteger(der, seq.contentOffset)
+  const s = readInteger(der, r.end)
+  if (s.end !== seq.end) throw new Error('Invalid DER signature sequence')
   const result = new Uint8Array(64)
-  writeNormalizedInteger(der, rHeader.contentOffset, rHeader.length, result, 0, 32)
-
-  const sOffset = rHeader.contentOffset + rHeader.length
-  const sHeader = readTagAndLength(der, sOffset)
-  if (sHeader.tag !== DER_INTEGER_TAG) {
-    throw new Error(`Expected DER INTEGER (0x02) for s, got 0x${sHeader.tag.toString(16)}`)
-  }
-  writeNormalizedInteger(der, sHeader.contentOffset, sHeader.length, result, 32, 32)
-
+  result.set(r.value)
+  result.set(s.value, 32)
   return result
 }
 
-/**
- * Extract the raw uncompressed public key (64 bytes, no 0x04 prefix) from a
- * DER-encoded SubjectPublicKeyInfo (SPKI) structure.
- *
- * SPKI structure:
- *   SEQUENCE {
- *     SEQUENCE { OID algorithm, OID curve }
- *     BIT STRING { 0x00 unused-bits, 0x04 || x(32) || y(32) }
- *   }
- */
+/** Extract a complete uncompressed secp256k1 public key from canonical DER SPKI. */
 export function extractPublicKeyFromSpki(spki: Uint8Array): Uint8Array {
-  const outerSeq = readTagAndLength(spki, 0)
-  if (outerSeq.tag !== DER_SEQUENCE_TAG) {
-    throw new Error(`Expected outer SEQUENCE, got 0x${outerSeq.tag.toString(16)}`)
+  const outer = readTagAndLength(spki, 0)
+  if (outer.tag !== DER_SEQUENCE_TAG) throw new Error('Expected outer SEQUENCE')
+  if (outer.end !== spki.length) throw new Error('Trailing SPKI data')
+  const algo = readTagAndLength(spki, outer.contentOffset)
+  if (algo.tag !== DER_SEQUENCE_TAG) throw new Error('Expected algorithm SEQUENCE')
+  // id-ecPublicKey and the named secp256k1 curve, with no extra parameters.
+  const expectedAlgorithm = Buffer.from('06072a8648ce3d020106052b8104000a', 'hex')
+  if (!Buffer.from(spki.subarray(algo.contentOffset, algo.end)).equals(expectedAlgorithm)) {
+    throw new Error('Expected id-ecPublicKey with secp256k1 curve')
   }
-
-  // Skip the algorithm SEQUENCE to find the BIT STRING
-  const algoSeq = readTagAndLength(spki, outerSeq.contentOffset)
-  if (algoSeq.tag !== DER_SEQUENCE_TAG) {
-    throw new Error(`Expected algorithm SEQUENCE, got 0x${algoSeq.tag.toString(16)}`)
-  }
-
-  const bitStringOffset = algoSeq.contentOffset + algoSeq.length
-  const bitString = readTagAndLength(spki, bitStringOffset)
-  if (bitString.tag !== DER_BITSTRING_TAG) {
-    throw new Error(`Expected BIT STRING, got 0x${bitString.tag.toString(16)}`)
-  }
-
-  // BIT STRING content: first byte is unused-bits count (should be 0x00),
-  // then the uncompressed point: 0x04 || x(32) || y(32)
-  const unusedBits = spki[bitString.contentOffset]
-  if (unusedBits !== 0x00) {
-    throw new Error(`Expected 0 unused bits in BIT STRING, got ${unusedBits}`)
-  }
-
-  const pointPrefix = spki[bitString.contentOffset + 1]
-  if (pointPrefix !== 0x04) {
-    throw new Error(`Expected uncompressed point prefix 0x04, got 0x${pointPrefix.toString(16)}`)
-  }
-
-  // Return the 64 bytes after the 0x04 prefix
-  return spki.slice(bitString.contentOffset + 2, bitString.contentOffset + 2 + 64)
+  const point = readTagAndLength(spki, algo.end)
+  if (point.tag !== DER_BITSTRING_TAG) throw new Error('Expected BIT STRING')
+  if (point.end !== outer.end) throw new Error('Invalid SPKI sequence')
+  if (spki[point.contentOffset] !== 0) throw new Error('Expected 0 unused bits')
+  if (spki[point.contentOffset + 1] !== 0x04) throw new Error('Expected uncompressed point prefix 0x04')
+  if (point.length !== 66) throw new Error('Expected complete 64-byte public key')
+  return spki.slice(point.contentOffset + 2, point.end)
 }

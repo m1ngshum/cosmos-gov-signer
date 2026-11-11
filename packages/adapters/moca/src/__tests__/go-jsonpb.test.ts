@@ -83,3 +83,15 @@ describe('jsonStringifySorted', () => {
     expect(out).toBe('{"@type":"T","metadata":"","voter":"v"}')
   })
 })
+
+describe('signer hex validation', () => {
+  it.each(['0xgg' + '00'.repeat(19), '0x0g' + '00'.repeat(19),
+    '0x' + '00'.repeat(19), '0x' + '00'.repeat(21), '', '0x1'])(
+    'rejects invalid signer address %s', input => {
+      expect(() => hexToBytes(input)).toThrow()
+    },
+  )
+  it('preserves mixed-case valid addresses', () => {
+    expect(hexToBytes('0x' + 'aB'.repeat(20))).toEqual(new Uint8Array(20).fill(0xab))
+  })
+})

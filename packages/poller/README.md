@@ -42,4 +42,4 @@ There is no timer, retry loop, persistent state, or built-in auto-vote policy. I
 
 The callback can receive the same proposal on every poll. Use durable, atomic deduplication keyed by chain and proposal ID before creating an approval record. Retrying a failed poll can repeat callbacks that already succeeded.
 
-Pagination belongs to the adapter. The current MOCA adapter reads one LCD response and does not follow pagination tokens, so this poller cannot guarantee discovery of proposals on subsequent pages.
+Pagination belongs to the adapter. The MOCA adapter follows LCD continuation keys and returns proposals only after every page succeeds. Other adapters must implement their own pagination.

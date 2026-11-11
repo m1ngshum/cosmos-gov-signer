@@ -126,3 +126,24 @@ describe('extractPublicKeyFromSpki', () => {
     expect(() => extractPublicKeyFromSpki(spki)).toThrow('Expected uncompressed point prefix 0x04')
   })
 })
+
+describe('DER boundary validation', () => {
+  it.each([
+    '', '30', '30060201010201', '300602010102010200',
+    '308106020101020101', '3006020180020101',
+    '300702020001020101', '3006020100020101',
+    '3026022101' + '11'.repeat(32) + '020101',
+  ])('rejects malformed signature %s', input => {
+    expect(() => decodeDerSignature(fromHex(input))).toThrow()
+  })
+
+  const spki = '3056301006072a8648ce3d020106052b8104000a03420004' + R32 + S32
+  it.each([
+    spki.slice(0, -2), spki + '00',
+    spki.replace('2b8104000a', '2b8104000b'),
+    spki.replace('2a8648ce3d0201', '2a8648ce3d0202'),
+    spki.replace('03420004', '03420104'),
+  ])('rejects malformed or wrong-algorithm SPKI', input => {
+    expect(() => extractPublicKeyFromSpki(fromHex(input))).toThrow()
+  })
+})

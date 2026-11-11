@@ -53,4 +53,4 @@ For MOCA's signing path, use the adapter's EIP-712 digest rather than hashing ar
 
 This package does not enforce approvals or the core signing gate, normalise signatures to low-S, add an Ethereum recovery byte, build transactions, or broadcast them. The MOCA adapter handles low-S normalisation and recovery when assembling a signed transaction.
 
-Invalid digest length, missing KMS signature/public-key responses, and unsupported DER structures can throw. AWS permission, credential, and service errors propagate to the caller. The decoding helpers are format converters, not general-purpose validators for untrusted DER input or key algorithms.
+Invalid digest length, missing KMS signature/public-key responses, and malformed or noncanonical DER structures throw. AWS permission, credential, and service errors propagate to the caller. The decoders enforce DER structure and lengths; SPKI requires id-ecPublicKey with secp256k1 and a complete uncompressed key. They do not validate elliptic-curve point membership or cryptographic signature validity.
