@@ -26,6 +26,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "^3.1161.0"
+    "@aws-sdk/client-kms": "^3.1164.0"
   }
 }
