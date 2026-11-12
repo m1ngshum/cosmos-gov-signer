@@ -7,6 +7,10 @@ export interface SigningGateResult {
 
 export function evaluateSigningGate(ctx: SigningGateContext): SigningGateResult {
   const { record, now } = ctx
+  if (now === undefined || [now, record.votingEndTime, record.overrideWindowEndsAt]
+    .some(date => date !== undefined && (!(date instanceof Date) || !Number.isFinite(date.getTime())))) {
+    return { approved: false, reason: 'invalid_date' }
+  }
 
   if (record.votingEndTime !== undefined && now > record.votingEndTime) {
     return { approved: false, reason: 'voting_period_expired' }

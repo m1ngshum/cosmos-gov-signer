@@ -69,7 +69,7 @@ The third builder argument is the signing wallet/authz grantee. The fourth is th
 | `innerMsg` | One protobuf message, including its type URL, such as the `MsgExec` above |
 | `bodyMessages` | JSON descriptions of the same message, including matching addresses, vote option, and proposal ID |
 | `signerPubkey` | Raw 64-byte `x || y` public key, without `0x04` |
-| `signerAddressHex` | The signer's Ethereum-style 20-byte `0x` address, used for fee-payer hashing |
+| `signerAddressHex` | The signer's Ethereum-style 20-byte `0x` address, used for fee-payer hashing; exactly 20 bytes of hex are required |
 | `accountNumber`, `sequence` | Current signer account values as `bigint` |
 | `chainId` | The actual target Cosmos chain ID; it must match the intended network |
 | `fee` | `{ denom, amount, gasLimit }`, with string amount and bigint gas limit |
@@ -86,7 +86,7 @@ Call `broadcastTx(signedTxBytes)` only after authorising submission. It uses `br
 
 ## Other operations
 
-- `fetchActiveProposals()` queries the LCD gov v1 voting-period endpoint. It validates proposal IDs as safe JavaScript integers, voting dates, and status values. It reads one response without pagination.
+- `fetchActiveProposals()` queries the LCD gov v1 voting-period endpoint. It validates proposal IDs as safe JavaScript integers, voting dates, and status values. It follows LCD continuation keys and rejects repeated or malformed keys; a failed page rejects the whole fetch.
 - `buildSubmitProposalTx(content, depositAmount, proposer)` returns unsigned `MsgSubmitProposal` bytes for type URL `/cosmos.gov.v1.MsgSubmitProposal`. It includes title, summary, metadata, proposer, and an initial deposit in `amoca`. It does not populate executable proposal messages; the `content.type` field is not used.
 
 For the current submission builder, supply metadata so the proposal is not empty:

@@ -33,6 +33,7 @@ interface LcdProposal {
 
 interface LcdProposalsResponse {
   readonly proposals: readonly LcdProposal[]
+  readonly pagination?: { readonly next_key?: string | null }
 }
 
 const LCD_STATUS_MAP: Record<string, GovernanceProposal['status'] | undefined> = {
@@ -73,38 +74,53 @@ export class MocaChainAdapter implements ChainAdapter {
 
   async fetchActiveProposals(): Promise<readonly GovernanceProposal[]> {
     const url = `${this.lcdEndpoint}/cosmos/gov/v1/proposals?proposal_status=PROPOSAL_STATUS_VOTING_PERIOD`
-    const response = await fetch(url)
+    const proposals: GovernanceProposal[] = []
+    const seenKeys = new Set<string>()
+    let nextKey = ''
+    do {
+      const response = await fetch(url + (nextKey ? '&pagination.key=' + encodeURIComponent(nextKey) : ''))
 
-    if (!response.ok) {
-      throw new Error(`LCD query failed: ${response.status} ${response.statusText}`)
-    }
-
-    const data = (await response.json()) as LcdProposalsResponse
-    if (!Array.isArray(data?.proposals)) {
-      throw new Error('LCD response missing proposals array')
-    }
-
-    return data.proposals.map((p): GovernanceProposal => {
-      const id = Number(p.id)
-      if (!Number.isSafeInteger(id)) {
-        throw new Error(`Proposal ID ${p.id} exceeds safe integer range`)
+      if (!response.ok) {
+        throw new Error(`LCD query failed: ${response.status} ${response.statusText}`)
       }
 
-      const votingStartTime = new Date(p.voting_start_time)
-      const votingEndTime = new Date(p.voting_end_time)
-      if (isNaN(votingStartTime.getTime()) || isNaN(votingEndTime.getTime())) {
-        throw new Error(`Proposal ${p.id} has invalid voting time`)
+      const data = (await response.json()) as LcdProposalsResponse
+      if (!Array.isArray(data?.proposals)) {
+        throw new Error('LCD response missing proposals array')
       }
 
-      return {
-        id,
-        title: p.title ?? '',
-        summary: p.summary ?? '',
-        status: mapLcdStatus(p.status),
-        votingStartTime,
-        votingEndTime,
+      proposals.push(...data.proposals.map((p): GovernanceProposal => {
+        const id = Number(p.id)
+        if (!Number.isSafeInteger(id)) {
+          throw new Error(`Proposal ID ${p.id} exceeds safe integer range`)
+        }
+
+        const votingStartTime = new Date(p.voting_start_time)
+        const votingEndTime = new Date(p.voting_end_time)
+        if (isNaN(votingStartTime.getTime()) || isNaN(votingEndTime.getTime())) {
+          throw new Error(`Proposal ${p.id} has invalid voting time`)
+        }
+
+        return {
+          id,
+          title: p.title ?? '',
+          summary: p.summary ?? '',
+          status: mapLcdStatus(p.status),
+          votingStartTime,
+          votingEndTime,
+        }
+      }))
+      const key = data.pagination?.next_key
+      if (key != null && typeof key !== 'string') {
+        throw new Error('LCD pagination key must be a string')
       }
-    })
+      nextKey = key ?? ''
+      if (nextKey && seenKeys.has(nextKey)) {
+        throw new Error('LCD pagination returned a repeated key')
+      }
+      seenKeys.add(nextKey)
+    } while (nextKey)
+    return proposals
   }
 
   async buildVoteTx(

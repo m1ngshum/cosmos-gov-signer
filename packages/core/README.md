@@ -59,7 +59,7 @@ console.log(result) // { approved: false, reason: 'not_ready' }
 
 ## Gate behavior and caller responsibilities
 
-Checks run in this order:
+Invalid current time, voting deadlines, or override deadlines are rejected first with `invalid_date`. Remaining checks run in this order:
 
 1. If `votingEndTime` exists and `now > votingEndTime`, reject with `voting_period_expired`.
 2. If `txHash` is present, reject with `already_signed`.

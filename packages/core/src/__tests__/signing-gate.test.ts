@@ -26,6 +26,23 @@ function makeCtx(
 }
 
 describe('evaluateSigningGate', () => {
+  it.each(['now', 'votingEndTime', 'overrideWindowEndsAt'] as const)(
+    'rejects invalid %s before approving ready',
+    field => {
+      const ctx = makeCtx({ status: 'ready' })
+      const invalid = new Date('invalid')
+      const result = evaluateSigningGate(field === 'now'
+        ? { ...ctx, now: invalid }
+        : { ...ctx, record: { ...ctx.record, [field]: invalid } })
+      expect(result).toEqual({ approved: false, reason: 'invalid_date' })
+    },
+  )
+
+  it.each([undefined, null, '2026-01-01'])('rejects a missing or non-Date clock', now => {
+    expect(evaluateSigningGate({ ...makeCtx({ status: 'ready' }), now: now as unknown as Date }))
+      .toEqual({ approved: false, reason: 'invalid_date' })
+  })
+
   describe('Rule 1: status === ready', () => {
     it('approves when status is ready', () => {
       const result = evaluateSigningGate(makeCtx({ status: 'ready' }))

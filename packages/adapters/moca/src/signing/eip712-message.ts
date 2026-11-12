@@ -49,6 +49,9 @@ export function buildDomain(chainIdEvm: number): TypedDataDomain {
 
 /** Decode a 0x-prefixed hex string to raw bytes. */
 export function hexToBytes(hex: string): Uint8Array {
+  if (!/^(?:0x)?[0-9a-fA-F]{40}$/.test(hex)) {
+    throw new Error('signerAddressHex must contain exactly 20 bytes of hexadecimal')
+  }
   const stripped = hex.startsWith('0x') ? hex.slice(2) : hex
   if (stripped.length % 2 !== 0) {
     throw new Error(`hex string length must be even: ${hex}`)
