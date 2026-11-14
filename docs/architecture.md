@@ -1,99 +1,91 @@
-# Architecture: Cosmos Governance Signing
+# Reference architecture: Cosmos governance signing
 
-## Problem
+This is a proposed consuming-application design around the four libraries. It is not evidence of a deployed approval service, configured AWS policies, working authz grants, or successful live transactions. See the [roadmap](roadmap.md) for implemented work and acceptance gates.
 
-MOCA chain (`moca_222888-1`) is an Evmos v12 fork using `ethsecp256k1` for all account keys. The standard Cosmos SDK multisig type (`LegacyAminoPubKey`) only supports `secp256k1`, making native validator multisig unavailable.
+## Library boundary
 
-## Solution: Three-Wallet Design
+The current MOCA adapter has fixed identifiers `moca_222888-1`, `moca`, and `ethsecp256k1`. Those constants do not verify the identity of the supplied endpoints. Check the actual target network before signing.
 
-Three separate keys with isolated blast radii replace on-chain multisig:
+| Provided by this repository | Owned by the consuming application |
+| --- | --- |
+| Record types and a pure eligibility gate | Approver authentication, threshold checks, override policy, and durable records |
+| KMS signing/public-key conversion | Key creation, credentials, key/IAM policies, rotation, and audit logging |
+| MOCA message/digest/transaction construction | Matching approved data to protobuf and JSON, network identity, account sequence and fees |
+| Single-pass proposal polling and adapter pagination | Scheduling, durable deduplication, bounded retries and monitoring |
+| `broadcast_tx_sync` submission returning a hash | Inclusion, execution result, recorded vote, and uncertain-outcome reconciliation |
 
-### Validator Operator Key
-- **Algorithm:** ethsecp256k1
-- **Location:** Cold hardware wallet (never online)
-- **Holds:** All staked MOCA and validator voting power
-- **Used for:** Issuing authz grant to vote-only wallet (one-time)
-- **Compromise blast radius:** All staked MOCA
+The design provides off-chain approvals around a single signing key. It does not make that key enforce K-of-N approvals cryptographically.
 
-### Vote-Only Wallet
-- **Algorithm:** ethsecp256k1
-- **Location:** AWS KMS (`gov-vote-key`)
-- **Holds:** Zero MOCA balance
-- **Used for:** Signing `MsgVote` via `authz exec` on behalf of operator key
-- **Compromise blast radius:** Vote manipulation only, no funds at risk
+## Proposed wallet separation
 
-### Proposal Wallet
-- **Algorithm:** ethsecp256k1
-- **Location:** AWS KMS (`gov-proposal-key`)
-- **Holds:** Minimum deposit amount
-- **Used for:** Signing `MsgSubmitProposal` directly
-- **Compromise blast radius:** Deposit balance only
+```text
+Cold authority account
+  └── scoped, expiring authz grant ──► Vote delegate (KMS)
 
-## Approval Flows
-
-### Flow A: Auto-NO (default)
-
-Every new proposal entering `VOTING_PERIOD` triggers an automatic NO vote:
-
-1. Poller detects proposal
-2. Auto-NO record created (`status: scheduled`)
-3. Override window opens (until `voting_end_time - 6h`)
-4. No override submitted → window expires
-5. Signing gate approves → KMS signs → broadcast via authz exec
-6. Record status → `signed`
-
-### Flow B: Manual Vote Override
-
-An approver or proposer requests a different vote option:
-
-1. Same trigger as Flow A
-2. Override requested (YES / ABSTAIN / NO_WITH_VETO)
-3. K-of-N approvers sign off → `status: ready`
-4. Original auto-NO cancelled
-5. Override vote signed and broadcast via authz exec
-
-### Flow C: Proposal Submission
-
-A proposer drafts a new governance proposal:
-
-1. Proposer drafts proposal in dashboard
-2. Approval record created (`status: pending_approval`)
-3. K-of-N approvers sign off → `status: ready`
-4. Proposal wallet KMS key signs `MsgSubmitProposal`
-5. Broadcast directly (no authz exec needed)
-
-## Signing Gate
-
-All flows converge at the same gate before any `kms:Sign` call:
-
-```
-1. Record status is "ready"
-   OR (flow == auto_vote AND now > overrideWindowEndsAt AND status == "scheduled")
-2. voting_end_time has not passed
-3. No existing txHash (idempotency guard)
+Separate proposal account (KMS)
+  └── signs proposal submissions directly
 ```
 
-Key selection:
-- Flows A + B → `gov-vote-key` (vote-only wallet)
-- Flow C → `gov-proposal-key` (proposal wallet)
+- **Authority account:** holds the relevant governance authority and issues or revokes delegation. Keep its signing material offline according to the operator's procedures. Compromise can affect all authority and funds controlled by it.
+- **Vote delegate:** should have only the intended voting grant and a bounded fee balance. A voting-only grant does not prevent the delegate's own key from spending its own funds. Risk depends on the actual grants, balances, and credential permissions.
+- **Proposal account:** should hold only the funds needed for its approved operational budget. Its key can spend the account's available funds; a deposit-sized balance is a policy, not a library guarantee.
 
-## Authz Grant Setup
+Vote transactions still require fees. Current `signTx` does not expose alternate fee-payer/feegrant parameters. Do not assume a zero-balance delegate works. Establish and validate a funding arrangement before authorizing transactions; feegrant support would need separate implementation and testing.
 
-One-time command from the cold operator key:
+## Example application flows
 
-```bash
-mocad tx authz grant <vote_only_wallet_address> generic \
-  --msg-type /cosmos.gov.v1.MsgVote \
-  --from <operator_address> \
-  --expiration "2027-01-01T00:00:00Z" \
-  --chain-id moca_222888-1
-```
+These flows are policy examples. There is no scheduler, dashboard, approval database, automatic NO vote, or automatic key selection in the packages.
 
-## Security Considerations
+### Scheduled vote
 
-- M-of-N threshold is enforced off-chain by the API's approval database
-- The approval DB is a high-trust component — compromise enables vote/proposal manipulation
-- Two separate IAM policies ensure vote and proposal KMS keys cannot cross-use
-- CloudTrail logs every `kms:Sign` call
-- JWT auth with SSO + MFA for dashboard access
-- JWT stored in memory only (never localStorage/sessionStorage)
+1. Poll proposals and atomically deduplicate by chain and proposal ID.
+2. Create a `scheduled` auto-vote record with a validated voting deadline and an application-defined override window. A six-hour margin is an example, not a built-in default.
+3. Apply the application's override policy before the window closes.
+4. Once eligible, claim signing work atomically and sign only the approved transaction.
+5. Persist the signed transaction's identity and reconcile broadcast, inclusion, execution, and recorded vote before declaring success.
+
+### Manual vote or override
+
+1. Authenticate the request and validate the proposal, option, and voting window.
+2. Validate distinct authorized approvers against the configured threshold before marking a record `ready`.
+3. Atomically cancel/supersede any competing scheduled vote as part of claiming the manual vote.
+4. Run the signing and reconciliation flow with the intended vote key.
+
+### Proposal submission
+
+1. Validate proposal content and approvers before marking a record `ready`.
+2. Select the intended proposal key and validate account funds, fees, and deposit requirements.
+3. Build matching protobuf and JSON descriptions; the current text-proposal builder supplies metadata but no executable messages.
+4. Sign, submit, and reconcile the resulting proposal. Direct proposal submission does not use the vote delegate's `MsgExec` wrapper.
+
+## Gate and concurrency contract
+
+Applications must invoke the gate before any signing request. On current `main`, it rejects invalid dates, an expired supplied voting deadline, and an existing transaction hash before considering either approval path. It approves `ready`, or an eligible `scheduled` auto-vote whose override window has passed. Other states, including `signing`, are rejected.
+
+The gate does not validate approval counts, enforce key choice, update state, or prevent two workers from reading the same eligible record. Use a durable compare-and-set/transaction to claim exactly the expected record version and preserve the gate-approved data. Passing a claimed record back with status `signing` will be rejected: eligibility evaluation and the atomic claim must be coordinated by the application, not treated as two interchangeable API calls.
+
+Track sequence ownership per signer account. On a timeout or restart, reconcile the previously signed transaction before signing again. A hash returned by synchronous broadcast is not execution confirmation. The exact persistence and recovery contract must be implemented and tested in the consumer.
+
+## Authz grant lifecycle
+
+Grant setup is an operational step requiring separate authorization. Validate the target chain ID, account addresses, message scope, grantee, expiry, and on-chain grant state. The library does not create, renew, or revoke grants.
+
+Use the authority account's account address, not its `valoper` address, as granter. Verify CLI syntax and the intended chain before preparing any command. No grant command is part of repository setup or CI.
+
+Monitor expiry, arrange authorized renewal, and document revocation and delegate-key rotation. Expiring grants are not a permanent one-time setup. Broad or additional grants increase the delegate's authority and must be reviewed independently.
+
+## Required operational controls, not deployed guarantees
+
+A consuming service should enforce:
+
+- Distinct approvers, authenticated access, and appropriate MFA/SSO policy.
+- Least-privilege key and IAM policies for each signing role; no assumed cross-key isolation.
+- Durable approval/signing audit records and configured, verified AWS audit logging.
+- Explicit fee/deposit budgets, grant expiry/revocation, and key rotation procedures.
+- An approved policy for credentials and browser/session token storage if a dashboard is built.
+
+No API, dashboard, infrastructure policy, or CloudTrail configuration is deployed by these libraries. Validate these controls in the actual consuming environment.
+
+## Validation still needed
+
+Chain-generated fixtures must settle edge-case JSON encoding compatibility and protobuf/JSON consistency. A separately authorized KMS/testnet exercise must establish signature acceptance, transaction inclusion and execution, and the recorded governance outcome. Offline and mocked tests do not establish those results.

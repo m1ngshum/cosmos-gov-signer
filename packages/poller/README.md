@@ -1,5 +1,7 @@
 # @m1ngshum/cosmos-gov-signer-poller
 
+> This guide describes repository `main`. Published npm versions may lag behind it; check the [release status and roadmap](https://github.com/m1ngshum/cosmos-gov-signer/blob/main/docs/roadmap.md) before relying on unreleased behavior.
+
 A stateless, single-pass governance proposal poller. It fetches proposals through a `ChainAdapter` and awaits a callback for each proposal whose status is `VOTING_PERIOD`.
 
 ## Install

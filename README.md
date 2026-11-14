@@ -1,91 +1,67 @@
 # cosmos-gov-signer
 
-Reusable library for Cosmos SDK governance signing with AWS KMS. Designed for chains where native multisig is unavailable (e.g. `ethsecp256k1` chains like MOCA/Evmos).
+TypeScript ES module libraries for Cosmos governance signing with AWS KMS and a MOCA `ethsecp256k1` adapter. The packages provide signing utilities; the consuming application owns approvals, scheduling, persistence, key permissions, and transaction reconciliation.
 
-## Architecture
+## Status and roadmap
 
-Three-wallet design with blast radius isolation:
+As checked on 15 November 2026, all four npm packages report `0.1.3`. That release was published from `2d7b96c` by [Actions run 42758382717](https://github.com/m1ngshum/cosmos-gov-signer/actions/runs/42758382717).
 
-```
-Validator Operator Key (cold)
-  ├── authz grant (one-time) ──► Vote-Only Wallet (KMS)
-  │                                 └── Signs MsgVote via MsgExec
-  │
-  └── (no relationship) ──────► Proposal Wallet (KMS)
-                                    └── Signs MsgSubmitProposal directly
-```
+[PR #39](https://github.com/m1ngshum/cosmos-gov-signer/pull/39) subsequently added invalid-date rejection, stricter DER/SPKI and signer-hex validation, and LCD pagination. Those fixes are merged on `main` and [passed build, typecheck, 103 tests, and packaging](https://github.com/m1ngshum/cosmos-gov-signer/actions/runs/43146303875), but have not been published to npm. Source version numbers alone do not establish which changes reached the registry.
 
-**Example integration policy:** A consuming application can schedule a NO vote for each new governance proposal and let approvers override it before signing. The poller only calls the application back for active proposals; the application handles scheduling, approvals, signing, and broadcasting.
+The previously verified `0.1.2` release passed a clean npm install, mocked integrations, and signature/provenance verification. Live AWS KMS and chain acceptance remain unverified.
+
+- [Roadmap and acceptance criteria](docs/roadmap.md)
+- [Private delivery board](https://github.com/users/m1ngshum/projects/6) — owner access required; public roadmap summaries live in this repository.
+- [Reference integration architecture](docs/architecture.md)
+
+A roadmap entry does not authorize a merge, release, provider request, signing operation, or broadcast.
 
 ## Packages
 
-```
-packages/
-├── core/              Zero-dep types, interfaces, signing gate logic
-├── kms/               AWS KMS signing + DER decoding
-├── adapters/
-│   └── moca/          MOCA chain adapter (ethsecp256k1, cosmjs)
-└── poller/            Stateless governance proposal poller
-```
+| Package | Purpose | API guide |
+| --- | --- | --- |
+| [@m1ngshum/cosmos-gov-signer-core](https://www.npmjs.com/package/@m1ngshum/cosmos-gov-signer-core) | Types, adapter contract, pure signing gate; no runtime dependencies | [core](packages/core/README.md) |
+| [@m1ngshum/cosmos-gov-signer-kms](https://www.npmjs.com/package/@m1ngshum/cosmos-gov-signer-kms) | KMS signing and DER/public-key conversion | [kms](packages/kms/README.md) |
+| [@m1ngshum/cosmos-gov-signer-adapter-moca](https://www.npmjs.com/package/@m1ngshum/cosmos-gov-signer-adapter-moca) | Proposal discovery, unsigned messages, EIP-712 signing, synchronous broadcast | [adapter-moca](packages/adapters/moca/README.md) |
+| [@m1ngshum/cosmos-gov-signer-poller](https://www.npmjs.com/package/@m1ngshum/cosmos-gov-signer-poller) | Single-pass callback-based proposal polling | [poller](packages/poller/README.md) |
 
-| Package | Description | Dependencies |
-|---------|-------------|-------------|
-| `@m1ngshum/cosmos-gov-signer-core` | Types, `ChainAdapter` interface, `evaluateSigningGate` | None |
-| `@m1ngshum/cosmos-gov-signer-kms` | `signWithKMS`, `getKMSPublicKey`, DER decoding | `@aws-sdk/client-kms` |
-| `@m1ngshum/cosmos-gov-signer-adapter-moca` | `MocaChainAdapter` implementation | `core`, cosmjs, `@noble/hashes` |
-| `@m1ngshum/cosmos-gov-signer-poller` | `pollProposals` function | `core` |
+## Development
 
-## Setup
+Use Node.js 26 and pnpm 12, matching CI. See `.github/workflows/npm-publish.yml` for the pinned tool versions.
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build
+pnpm typecheck
 pnpm test
 ```
 
-Use Node.js 26 and pnpm 12 for local development, matching CI.
+## Signing responsibilities
 
-## Signing Gate
+Call `evaluateSigningGate` before requesting a signature. It trusts a record marked `ready`; it does not count approvals or lock records. The KMS and adapter signing APIs do not invoke it automatically. The application must validate approvals, atomically claim signing work, coordinate account sequences, and persist/reconcile outcomes.
 
-Call `evaluateSigningGate` before requesting a KMS signature. The signing
-APIs do not call the gate themselves. The application must validate approvals
-before setting a record to `ready`; the gate does not count approvals.
+The reference three-wallet design separates a cold authority key, a vote delegate, and a proposal wallet. It is an application design, not a deployed service or an on-chain multisig implementation. Fee funding, authz grant lifecycle, and key-policy enforcement need explicit operational design.
 
-The gate rejects records whose voting period has passed or that already have
-a transaction hash. It then allows `ready` records and scheduled auto-votes
-whose override window has passed. All other records are rejected.
+## Releases
 
-## npm releases
+PRs and pushes to `main` build, typecheck, test, and pack all four packages. pnpm converts `workspace:*` dependencies to npm versions when packing.
 
-CI builds, typechecks, tests, and packs all four packages on pull requests and
-pushes to `main`. pnpm packs the packages so their `workspace:*` dependencies
-are converted to npm versions.
+For a coordinated release:
 
-Before the first release, sign in to npm as `m1ngshum` and verify with `npm whoami`.
-npm Trusted Publishing is configured on existing packages, so bootstrap any
-missing packages once using an authorized npm account. Build and pack the
-reviewed release using the workflow's pack step, then publish the resulting
-tarballs with `npm publish <tarball> --access public --ignore-scripts` in this
-order: core, kms, poller, adapter-moca.
+1. Review the source changes and bump all four package versions together.
+2. Merge only after the required checks and an authorized review/override.
+3. With explicit release authorization, run **npm release** manually from `main`.
+4. Verify all four exact versions, public tarball downloads, provenance identities/digests, and a fresh consumer install. Run `npm audit signatures` in that consumer.
 
-Before configuring npm, create the GitHub environment `npm-publish` and restrict
-its deployment branches to the branch `main` only (no tags). For each package, add a [GitHub Actions trusted publisher](https://docs.npmjs.com/trusted-publishers/)
-with owner `m1ngshum`, repository `cosmos-gov-signer`, workflow
-`npm-publish.yml`, environment `npm-publish`, and permission for direct `npm publish`.
-After bootstrapping, bump the versions of all four packages together, merge
-the release changes, and run **npm release** manually from `main`. The publish
-job uses OIDC and needs no npm token secret. Configure trust when ready to
-publish: npm expires the initial configuration if no successful publish occurs
-within two days.
+The isolated publish job uses npm Trusted Publishing (OIDC), not a stored npm publishing token. Each package's trust must match owner `m1ngshum`, repository `cosmos-gov-signer`, workflow `npm-publish.yml`, and environment `npm-publish`. The environment must restrict deployment branches to `main`, excluding tags. A new trust binding must complete its first successful publish within two days; see [npm's configuration guidance](https://docs.npmjs.com/trusted-publishers/).
 
-If a publish run fails, use `npm view <package>@<version> version` against the
-public registry to confirm which versions landed. Once any package is live,
-rerunning the workflow will stop at the first already published version.
-Download the `npm-packages` artifact from the failed run and, after resolving
-the failure, use an authorized npm account to publish only the missing,
-reviewed tarballs in the order above. If those exact tarballs cannot be
-verified or need changes, prepare a new coordinated version for all four
-packages. Published versions cannot be overwritten.
+### Failure and partial release recovery
+
+Check exact versions with `npm view <package>@<version> version`, then check their metadata-provided tarball and attestation URLs. Registry metadata and artifacts can become visible at different times. A 404 after a successful publish is not permission to republish or overwrite that version.
+
+If some versions genuinely did not publish, rerunning the workflow will stop at the first already-published package. Download the failed run's `npm-packages` artifact, verify its identity and contents, resolve the failure, and obtain explicit authorization to publish only the missing reviewed tarballs. Alternatively, prepare a fresh coordinated version if changes or unverifiable artifacts require it. Publish order is core, kms, poller, adapter-moca. Published versions cannot be overwritten.
+
+The four existing packages have already been bootstrapped. Creating any additional package requires control of its npm scope and an authorized initial publish before configuring its trust.
 
 ## License
 
