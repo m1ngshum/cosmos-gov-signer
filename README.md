@@ -11,7 +11,7 @@ As checked on 15 November 2026, all four npm packages report `0.1.3`. That relea
 The previously verified `0.1.2` release passed a clean npm install, mocked integrations, and signature/provenance verification. Live AWS KMS and chain acceptance remain unverified.
 
 - [Roadmap and acceptance criteria](docs/roadmap.md)
-- [Private delivery board](https://github.com/users/m1ngshum/projects/6) — owner access required; public roadmap summaries live in this repository.
+- [Private delivery board](https://github.com/users/m1ngshum/projects/6) — project access required; public roadmap summaries live in this repository.
 - [Reference integration architecture](docs/architecture.md)
 
 A roadmap entry does not authorize a merge, release, provider request, signing operation, or broadcast.
