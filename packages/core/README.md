@@ -1,5 +1,7 @@
 # @m1ngshum/cosmos-gov-signer-core
 
+> This guide describes repository `main`. Published npm versions may lag behind it; check the [release status and roadmap](https://github.com/m1ngshum/cosmos-gov-signer/blob/main/docs/roadmap.md) before relying on unreleased behavior.
+
 Types, the `ChainAdapter` interface, and a pure signing eligibility check for Cosmos governance applications. This package has no runtime dependencies.
 
 ## Install

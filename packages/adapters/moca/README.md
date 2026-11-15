@@ -1,5 +1,7 @@
 # @m1ngshum/cosmos-gov-signer-adapter-moca
 
+> This guide describes repository `main`. Published npm versions may lag behind it; check the [release status and roadmap](https://github.com/m1ngshum/cosmos-gov-signer/blob/main/docs/roadmap.md) before relying on unreleased behavior.
+
 A `ChainAdapter` implementation for MOCA's `ethsecp256k1` signing path, with fixed chain ID `moca_222888-1`, address prefix `moca`, and fee denomination `amoca` in the proposal builder.
 
 ## Install
