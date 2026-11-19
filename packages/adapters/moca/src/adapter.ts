@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type {
   ChainAdapter,
   GovernanceProposal,
@@ -46,7 +47,7 @@ const LCD_STATUS_MAP: Record<string, GovernanceProposal['status'] | undefined> =
 
 function mapLcdStatus(raw: string): GovernanceProposal['status'] {
   const mapped = LCD_STATUS_MAP[raw]
-  if (mapped === undefined) {
+  if (!Object.hasOwn(LCD_STATUS_MAP, raw) || mapped === undefined) {
     throw new Error(`Unknown proposal status: ${raw}`)
   }
   return mapped
@@ -90,6 +91,7 @@ export class MocaChainAdapter implements ChainAdapter {
       }
 
       proposals.push(...data.proposals.map((p): GovernanceProposal => {
+        if (typeof p.id !== 'string' || !/^[1-9][0-9]*$/.test(p.id)) throw new Error('Invalid LCD proposal ID')
         const id = Number(p.id)
         if (!Number.isSafeInteger(id)) {
           throw new Error(`Proposal ID ${p.id} exceeds safe integer range`)
@@ -129,6 +131,7 @@ export class MocaChainAdapter implements ChainAdapter {
     voter: string,
     granter: string,
   ): Promise<Uint8Array> {
+    if (!Number.isSafeInteger(proposalId) || proposalId <= 0) throw new Error('Invalid proposal ID')
     const innerMsg = MsgVote.encode(
       MsgVote.fromPartial({
         proposalId: BigInt(proposalId),
@@ -176,6 +179,8 @@ export class MocaChainAdapter implements ChainAdapter {
   }
 
   async broadcastTx(signedTxBytes: Uint8Array): Promise<string> {
+    const tx = Buffer.from(signedTxBytes)
+    const expectedHash = createHash('sha256').update(tx).digest('hex')
     const response = await fetch(this.rpcEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -184,7 +189,7 @@ export class MocaChainAdapter implements ChainAdapter {
         id: 1,
         method: 'broadcast_tx_sync',
         params: {
-          tx: Buffer.from(signedTxBytes).toString('base64'),
+          tx: tx.toString('base64'),
         },
       }),
     })
@@ -207,8 +212,8 @@ export class MocaChainAdapter implements ChainAdapter {
     }
 
     const txHash = data.result?.hash
-    if (txHash === undefined) {
-      throw new Error('Broadcast response missing tx hash')
+    if (data.result?.code !== 0 || typeof txHash !== 'string' || txHash.toLowerCase() !== expectedHash) {
+      throw new Error('Broadcast response missing success code or matching tx hash')
     }
 
     return txHash

@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // 32-byte test values
 const R32 = '0102030405060708091011121314151617181920212223242526272829303132'
 const S32 = '3334353637383940414243444546474849505152535455565758596061626364'
-const X32 = R32
-const Y32 = S32
+const X32 = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+const Y32 = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8'
 
 function fromHex(hexStr: string): Uint8Array {
   const bytes = new Uint8Array(hexStr.length / 2)
