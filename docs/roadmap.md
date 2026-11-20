@@ -57,7 +57,7 @@ Acceptance:
 - Include mismatched protobuf/JSON and wrong-signer cases.
 - Add offline regression fixtures. Change encoding only if reference evidence demonstrates a mismatch.
 
-**Blocker:** chain-generated reference evidence is not yet available in this review. JavaScript/Go escaping differences are a compatibility hypothesis, not a demonstrated live-chain failure.
+The [conformance suite](../conformance/README.md) includes reproducible delegated-vote fixtures from the pinned MOCA fork and native Cosmos SDK. Proposal submission and edge-case metadata escaping remain open. JavaScript/Go escaping differences are a compatibility hypothesis.
 
 ### R4 — Add a prepare-only acceptance harness
 
