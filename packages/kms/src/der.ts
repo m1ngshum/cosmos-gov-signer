@@ -1,3 +1,7 @@
+import { ECDH } from 'node:crypto'
+
+// SEC 2 section 2.4.1, order of the secp256k1 base point.
+const SECP256K1_ORDER = Buffer.from('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141', 'hex')
 const DER_SEQUENCE_TAG = 0x30
 const DER_INTEGER_TAG = 0x02
 const DER_BITSTRING_TAG = 0x03
@@ -37,6 +41,7 @@ function readInteger(der: Uint8Array, offset: number): { value: Uint8Array; end:
   }
   const value = new Uint8Array(32)
   value.set(bytes, 32 - bytes.length)
+  if (Buffer.compare(value, SECP256K1_ORDER) >= 0) throw new Error('ECDSA scalar outside secp256k1 range')
   return { value, end: part.end }
 }
 
@@ -72,5 +77,7 @@ export function extractPublicKeyFromSpki(spki: Uint8Array): Uint8Array {
   if (spki[point.contentOffset] !== 0) throw new Error('Expected 0 unused bits')
   if (spki[point.contentOffset + 1] !== 0x04) throw new Error('Expected uncompressed point prefix 0x04')
   if (point.length !== 66) throw new Error('Expected complete 64-byte public key')
+  // OpenSSL checks curve membership before converting the SEC 1 point.
+  ECDH.convertKey(spki.subarray(point.contentOffset + 1, point.end), 'secp256k1')
   return spki.slice(point.contentOffset + 2, point.end)
 }

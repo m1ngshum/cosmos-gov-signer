@@ -3,28 +3,12 @@ import { SignMode } from 'cosmjs-types/cosmos/tx/signing/v1beta1/signing'
 import { Any } from 'cosmjs-types/google/protobuf/any'
 import { Coin } from 'cosmjs-types/cosmos/base/v1beta1/coin'
 
+import { compressEcPubkey } from '../public-key.js'
+export { compressEcPubkey }
+
 // MOCA chain (evmos fork) registers the ethsecp256k1 PubKey under this URL.
 // Verified against devnet-2 /cosmos/auth/v1beta1/accounts/<validator> responses.
 const ETHSECP_PUBKEY_TYPE_URL = '/cosmos.crypto.eth.ethsecp256k1.PubKey'
-
-/**
- * Compress a 64-byte uncompressed secp256k1 pubkey (X || Y) to 33-byte compressed form.
- *
- * Implementation is a manual parity check rather than going through a curve-point
- * constructor: the last byte of Y tells us parity directly (even → 0x02, odd → 0x03),
- * and no curve-membership validation is needed to produce the compressed encoding.
- * This keeps the helper agnostic to noble-curves API changes across majors.
- */
-export function compressEcPubkey(rawXY64: Uint8Array): Uint8Array {
-  if (rawXY64.length !== 64) throw new Error(`expected 64-byte pubkey, got ${rawXY64.length}`)
-  const x = rawXY64.subarray(0, 32)
-  const yLastByte = rawXY64[63] ?? 0
-  const prefix = (yLastByte & 1) === 0 ? 0x02 : 0x03
-  const out = new Uint8Array(33)
-  out[0] = prefix
-  out.set(x, 1)
-  return out
-}
 
 function encodePubKeyAny(compressed33: Uint8Array): Any {
   // Ethermint PubKey proto: { bytes key = 1; }

@@ -1,3 +1,4 @@
+import { compressEcPubkey } from './public-key.js'
 import { keccak_256 } from '@noble/hashes/sha3.js'
 import { toBech32 } from '@cosmjs/encoding'
 
@@ -16,6 +17,7 @@ export function deriveAddress(publicKey: Uint8Array, prefix: string): string {
     throw new Error(`Expected 64-byte public key, got ${publicKey.length} bytes`)
   }
 
+  compressEcPubkey(publicKey)
   const hash = keccak_256(publicKey)
   const addressBytes = hash.slice(hash.length - 20)
 

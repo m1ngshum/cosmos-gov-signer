@@ -107,6 +107,17 @@ describe('MocaChainAdapter', () => {
       })
     })
 
+    it.each(['0x10', '-1', '', null])('rejects invalid LCD proposal ID %s', async id => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ proposals: [{ id }] }) })
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('proposal ID')
+    })
+
+    it('rejects an inherited property name as a proposal status', async () => {
+      const proposal = { id: '1', status: 'constructor', voting_start_time: '2026-01-01', voting_end_time: '2026-01-15' }
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ proposals: [proposal] }) })
+      await expect(makeAdapter().fetchActiveProposals()).rejects.toThrow('Unknown proposal status')
+    })
+
     it('queries the correct LCD endpoint', async () => {
       const adapter = makeAdapter()
       mockFetch.mockResolvedValueOnce({
@@ -145,6 +156,10 @@ describe('MocaChainAdapter', () => {
   })
 
   describe('buildVoteTx', () => {
+    it.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])('rejects invalid proposal number %s', async id => {
+      await expect(makeAdapter().buildVoteTx(id, 'YES', 'voter', 'granter')).rejects.toThrow('proposal ID')
+    })
+
     it('returns encoded MsgExec wrapping MsgVote', async () => {
       const adapter = makeAdapter()
       const result = await adapter.buildVoteTx(
@@ -192,12 +207,20 @@ describe('MocaChainAdapter', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          result: { hash: 'ABCDEF1234567890', code: 0 },
+          result: { hash: '039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81', code: 0 },
         }),
       })
 
       const txHash = await adapter.broadcastTx(new Uint8Array([1, 2, 3]))
-      expect(txHash).toBe('ABCDEF1234567890')
+      expect(txHash).toBe('039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81')
+    })
+
+    it.each([
+      { code: 0, hash: '00'.repeat(32) },
+      { hash: '039058C6F2C0CB492C533B0A4D14EF77CC0F78ABCCCED5287D84A1A2011CFB81' },
+    ])('rejects an inconsistent CheckTx result', async result => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ result }) })
+      await expect(makeAdapter().broadcastTx(Uint8Array.of(1, 2, 3))).rejects.toThrow('matching tx hash')
     })
 
     it('throws on RPC error response', async () => {
@@ -245,7 +268,10 @@ describe('MocaChainAdapter', () => {
   describe('deriveAddress', () => {
     it('delegates to address derivation with moca prefix', () => {
       const adapter = makeAdapter()
-      const pubkey = Buffer.alloc(64, 0x01)
+      const pubkey = Buffer.from(
+        '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798' +
+        '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8', 'hex',
+      )
       const address = adapter.deriveAddress(pubkey)
       expect(address.startsWith('moca1')).toBe(true)
     })

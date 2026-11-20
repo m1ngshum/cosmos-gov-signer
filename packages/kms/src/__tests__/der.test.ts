@@ -92,8 +92,8 @@ describe('decodeDerSignature', () => {
 
 describe('extractPublicKeyFromSpki', () => {
   it('extracts 64-byte public key from SPKI-encoded secp256k1 key', () => {
-    const x = R32
-    const y = S32
+    const x = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+    const y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8'
     const spki = fromHex(
       '3056' +                                   // outer SEQUENCE, 86 bytes
       '3010' +                                   // algorithm SEQUENCE, 16 bytes
@@ -129,6 +129,7 @@ describe('extractPublicKeyFromSpki', () => {
 
 describe('DER boundary validation', () => {
   it.each([
+    '3026022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141020101',
     '', '30', '30060201010201', '300602010102010200',
     '308106020101020101', '3006020180020101',
     '300702020001020101', '3006020100020101',
@@ -139,6 +140,7 @@ describe('DER boundary validation', () => {
 
   const spki = '3056301006072a8648ce3d020106052b8104000a03420004' + R32 + S32
   it.each([
+    spki, // Correct envelope and length, but the coordinates are off-curve.
     spki.slice(0, -2), spki + '00',
     spki.replace('2b8104000a', '2b8104000b'),
     spki.replace('2a8648ce3d0201', '2a8648ce3d0202'),
