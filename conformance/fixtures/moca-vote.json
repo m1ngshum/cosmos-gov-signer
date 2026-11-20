@@ -1,0 +1,18 @@
+{
+  "accountNumber": "42",
+  "chainId": "moca_222888-1",
+  "chainRevision": "c88fa7c6bb0659c4f81a454586e23aa2f7245f8a",
+  "delegate": "moca19dddt3retspx298cx9785g27yxxue4k05sd8my",
+  "delegatePublicKeyHex": "c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a",
+  "eip712DigestHex": "0x4d3646c3ff85fdfe0f9feafa66e96d2e84acdf68e23b0b171fb1a1220c99b495",
+  "feeAmount": "2500000000000000",
+  "gasLimit": "250000",
+  "granter": "moca10e0525sfrf53yh2aljmm3sn9jq5njk7lfq3345",
+  "option": "NO",
+  "proposalId": "1",
+  "sdkRevision": "af93a95df6d153c6ffe7dd4b1e8672bd405af566",
+  "sequence": "7",
+  "signatureHex": "04ce1089f24a96ace849990ac8ccf52c36b6ec864d90623cbdce2d79c2964e696bd5a2b3382feb639fc76d8ca6c923e9b7c01d0f18c9ba5e5290e76d0381b99800",
+  "unsignedAuthInfoBase64": "ClcKTQomL2Nvc21vcy5jcnlwdG8uZXRoLmV0aHNlY3AyNTZrMS5QdWJLZXkSIwohAsYEf5RB7X1tMEVAbpXAfNhcd45LjO88p6usCblccJ7lEgQKAggBGAcSHwoZCgVhbW9jYRIQMjUwMDAwMDAwMDAwMDAwMBCQoQ8=",
+  "unsignedTxBodyBase64": "CpsBCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxJ6Cittb2NhMTlkZGR0M3JldHNweDI5OGN4OTc4NWcyN3l4eHVlNGswNXNkOG15EksKFi9jb3Ntb3MuZ292LnYxLk1zZ1ZvdGUSMQgBEittb2NhMTBlMDUyNXNmcmY1M3loMmFsam1tM3NuOWpxNW5qazdsZnEzMzQ1GAM="
+}

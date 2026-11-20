@@ -27,7 +27,7 @@ A roadmap entry does not authorize a merge, release, provider request, signing o
 
 ## Development
 
-[Prepare a MOCA governance vote offline](examples/prepare-moca-vote/README.md) with the published adapter.
+[Prepare a MOCA governance vote offline](examples/prepare-moca-vote/README.md) with the published adapter, or [check vote readiness against a read-only REST snapshot](examples/prepare-moca-vote/README.md#read-only-governance-preflight). The [signing conformance fixtures](conformance/README.md) compare TypeScript outputs with pinned Go references.
 
 Use Node.js 26 and pnpm 12, matching CI. See `.github/workflows/npm-publish.yml` for the pinned tool versions.
 
