@@ -127,11 +127,44 @@ export async function preflightVote(
   const checkedBlockAt = clock()
   if (blockTime < checkedBlockAt - 120_000 || blockTime > checkedBlockAt + 30_000) throw new Error('REST endpoint block time is stale or in the future')
 
-  const [proposalReply, grantReply, balanceReply] = await Promise.all([
+  // The SDK's message-scoped lookup errors on absence. A complete pair
+  // listing can distinguish a missing grant from a failed query.
+  async function listVoteGrant() {
+    const query = new URLSearchParams({ granter, grantee: delegate, 'pagination.limit': '100' })
+    const seen = new Set<string>()
+    let unsupported = false
+    let voteGrant: Record<string, unknown> | undefined
+    for (let page = 0; page < 10; page++) {
+      const reply = await get('/cosmos/authz/v1beta1/grants', height, query)
+      if (!Array.isArray(reply.grants)) throw new Error('Invalid grant listing')
+      for (const value of reply.grants) {
+        const entry = object(value, 'grant listing entry')
+        const auth = object(entry.authorization, 'grant authorization')
+        if (typeof auth['@type'] !== 'string' || !auth['@type']) throw new Error('Invalid grant authorization type')
+        if (auth['@type'] !== '/cosmos.authz.v1beta1.GenericAuthorization') {
+          unsupported = true
+        } else {
+          if (typeof auth.msg !== 'string' || !auth.msg) throw new Error('Invalid generic grant message')
+          if (auth.msg === voteType) {
+            if (voteGrant) throw new Error('Duplicate generic vote grant')
+            voteGrant = entry
+          }
+        }
+      }
+      const next = reply.pagination == null ? null : object(reply.pagination, 'grant pagination').next_key
+      if (next == null || next === '') return { voteGrant, unsupported }
+      if (typeof next !== 'string' || next.length > 4096 || seen.has(next)) {
+        throw new Error('Invalid or repeated grant continuation key')
+      }
+      seen.add(next)
+      query.set('pagination.key', next)
+    }
+    throw new Error('Grant listing exceeds 10 pages')
+  }
+
+  const [proposalReply, { voteGrant, unsupported }, balanceReply] = await Promise.all([
     get(`/cosmos/gov/v1/proposals/${proposalId}`, height),
-    get('/cosmos/authz/v1beta1/grants', height, new URLSearchParams({
-      granter, grantee: delegate, msg_type_url: voteType,
-    })),
+    listVoteGrant(),
     get(`/cosmos/bank/v1beta1/spendable_balances/${delegate}/by_denom`, height, new URLSearchParams({ denom: feeDenom })),
   ])
   const proposal = object(proposalReply.proposal, 'proposal')
@@ -144,23 +177,14 @@ export async function preflightVote(
   const when = Math.max(checkedAt, blockTime)
   const proposalOpen = proposal.status === 'PROPOSAL_STATUS_VOTING_PERIOD' && deadline !== null && deadline > when
 
-  // The scoped query is unique for a Cosmos SDK granter, grantee and message type.
-  const nextKey = grantReply.pagination == null ? null : object(grantReply.pagination, 'grant pagination').next_key
-  if ((nextKey != null && nextKey !== '') || !Array.isArray(grantReply.grants) || grantReply.grants.length > 1) {
-    throw new Error('Unexpected scoped vote grant results')
-  }
   let grant: { status: 'missing' | 'unsupported' | 'expired' | 'active'; expiresAt: string | null } = {
-    status: 'missing', expiresAt: null,
+    status: unsupported ? 'unsupported' : 'missing', expiresAt: null,
   }
-  if (grantReply.grants.length === 1) {
-    const entry = object(grantReply.grants[0], 'vote grant')
-    const auth = object(entry.authorization, 'vote authorization')
-    const expiry = entry.expiration == null ? null : utc(entry.expiration, 'grant expiration')
+  if (voteGrant) {
+    const expiry = voteGrant.expiration == null ? null : utc(voteGrant.expiration, 'grant expiration')
     grant = {
-      status: auth['@type'] !== '/cosmos.authz.v1beta1.GenericAuthorization' || auth.msg !== voteType
-        ? 'unsupported'
-        : expiry !== null && expiry <= when ? 'expired' : 'active',
-      expiresAt: expiry === null ? null : entry.expiration as string,
+      status: expiry !== null && expiry <= when ? 'expired' : 'active',
+      expiresAt: expiry === null ? null : voteGrant.expiration as string,
     }
   }
   const balance = object(balanceReply.balance, 'spendable balance')

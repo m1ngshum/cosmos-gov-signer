@@ -41,7 +41,14 @@ function mock(overrides = {}) {
     } else if (url.pathname.endsWith('/grants')) {
       assert.equal(url.searchParams.get('granter'), request.granter)
       assert.equal(url.searchParams.get('grantee'), request.delegate)
-      assert.equal(url.searchParams.get('msg_type_url'), authorization.msg)
+      assert.equal(url.searchParams.has('msg_type_url'), false)
+      assert.equal(url.searchParams.get('pagination.limit'), '100')
+      if (overrides.grantError) return new Response(null, { status: overrides.grantError })
+      if (overrides.grantPage) {
+        return Response.json(overrides.grantPage(url.searchParams.get('pagination.key')), {
+          headers: { 'grpc-metadata-x-cosmos-block-height': '50' },
+        })
+      }
       body = { grants: overrides.grants ?? [{ authorization, expiration: '2026-01-01T12:30:00Z' }],
         pagination: overrides.pagination ?? null }
     } else {
@@ -78,7 +85,7 @@ test('explains closed proposals, expired or missing grants, and inadequate spend
   assert.equal(result.fee.coversRequestedFee, false)
   assert.equal((await preflightVote(registry, request, mock({ grants: [] }).options)).grant.status, 'missing')
   assert.equal((await preflightVote(registry, request, mock({
-    grants: [{ authorization: { ...authorization, msg: '/cosmos.gov.v1.MsgVoteWeighted' } }],
+    grants: [{ authorization: { '@type': '/example.CustomAuthorization' } }],
   }).options)).grant.status, 'unsupported')
 })
 
@@ -97,7 +104,7 @@ test('rejects inconsistent heights, proposal IDs, partial grant results, or malf
   for (const [fixture, error] of [
     [{ height: '51' }, /block height/],
     [{ proposal: { id: '1' } }, /Unexpected proposal/],
-    [{ pagination: { next_key: 'more' } }, /grant results/],
+    [{ grants: [], pagination: { next_key: 'more' } }, /repeated grant continuation/],
     [{ spendable: '1e20' }, /spendable balance/],
   ]) {
     await assert.rejects(preflightVote(registry, request, mock(fixture).options), error)
@@ -123,4 +130,16 @@ test('rechecks deadlines after the queries complete', async () => {
   const result = await preflightVote(registry, request, { ...options, clock: () => times.shift() })
   assert.equal(result.proposal.open, false)
   assert.equal(result.checksPassed, false)
+})
+
+test('follows height-pinned grant pages and distinguishes absence from query failure', async () => {
+  const other = { authorization: { ...authorization, msg: '/cosmos.gov.v1.MsgVoteWeighted' } }
+  const grantPage = key => {
+    if (key === null) return { grants: [other], pagination: { next_key: 'a+/=' } }
+    assert.equal(key, 'a+/=')
+    return { grants: [{ authorization, expiration: null }], pagination: { next_key: null } }
+  }
+  assert.equal((await preflightVote(registry, request, mock({ grantPage }).options)).grant.status, 'active')
+  assert.equal((await preflightVote(registry, request, mock({ grants: [other] }).options)).grant.status, 'missing')
+  await assert.rejects(preflightVote(registry, request, mock({ grantError: 404 }).options), /HTTP 404/)
 })
