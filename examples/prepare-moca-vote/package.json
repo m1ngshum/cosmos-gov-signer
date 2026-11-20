@@ -1,0 +1,19 @@
+{
+  "name": "prepare-moca-vote",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepare-vote": "node dist/prepare-vote.js",
+    "test": "node --test prepare-vote.test.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@cosmjs/encoding": "0.39.0",
+    "@m1ngshum/cosmos-gov-signer-adapter-moca": "0.1.4"
+  },
+  "devDependencies": {
+    "cosmjs-types": "0.11.0"
+  }
+}
