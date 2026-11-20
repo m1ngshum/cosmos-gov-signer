@@ -1,6 +1,12 @@
 packages:
   - "packages/*"
   - "packages/adapters/*"
+  - "examples/prepare-moca-vote"
 
 allowBuilds:
   'esbuild@0.28.2': true
+
+# Verified npm artifacts pinned by the example. Remove once they clear pnpm's release-age window.
+minimumReleaseAgeExclude:
+  - "@m1ngshum/cosmos-gov-signer-adapter-moca@0.1.4"
+  - "@m1ngshum/cosmos-gov-signer-core@0.1.4"

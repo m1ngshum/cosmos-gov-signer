@@ -27,6 +27,7 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm --filter prepare-moca-vote test
       - name: Pack release tarballs
         run: |
           mkdir release

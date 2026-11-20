@@ -27,6 +27,8 @@ A roadmap entry does not authorize a merge, release, provider request, signing o
 
 ## Development
 
+[Prepare a MOCA governance vote offline](examples/prepare-moca-vote/README.md) with the published adapter.
+
 Use Node.js 26 and pnpm 12, matching CI. See `.github/workflows/npm-publish.yml` for the pinned tool versions.
 
 ```bash
