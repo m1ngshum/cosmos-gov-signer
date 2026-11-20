@@ -6,8 +6,9 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "prepare-vote": "node dist/prepare-vote.js",
-    "test": "node --test prepare-vote.test.mjs",
-    "clean": "rm -rf dist"
+    "test": "node --test prepare-vote.test.mjs preflight.test.mjs conformance.test.mjs",
+    "clean": "rm -rf dist",
+    "preflight": "node dist/preflight.js"
   },
   "dependencies": {
     "@cosmjs/encoding": "0.39.0",

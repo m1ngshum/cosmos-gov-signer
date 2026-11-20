@@ -1,0 +1,18 @@
+{
+  "accountNumber": "42",
+  "chainId": "cosmos-fixture-1",
+  "delegate": "cosmos1q6hag67dl53wl99vzg42z8eyzfz2xlkvsrxukv",
+  "delegatePublicKeyHex": "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+  "feeAmount": "1000",
+  "gasLimit": "250000",
+  "granter": "cosmos1w508d6qejxtdg4y5r3zarvary0c5xw7k6ah60c",
+  "option": "NO",
+  "proposalId": "1",
+  "sdkRevision": "bb3fb62963674e6c423e33fcec7029b79f182982",
+  "sequence": "7",
+  "sha256Hex": "8e181dfb7e44e1a60cce916b71d5e18819758faa0b20c51a47059e95c3a0d63f",
+  "signDocBase64": "CqIBCp8BCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxJ+Ci1jb3Ntb3MxcTZoYWc2N2RsNTN3bDk5dnpnNDJ6OGV5emZ6Mnhsa3Zzcnh1a3YSTQoWL2Nvc21vcy5nb3YudjEuTXNnVm90ZRIzCAESLWNvc21vczF3NTA4ZDZxZWp4dGRnNHk1cjN6YXJ2YXJ5MGM1eHc3azZhaDYwYxgDEmcKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQLGBH+UQe19bTBFQG6VwHzYXHeOS4zvPKerrAm5XHCe5RIECgIIARgHEhMKDQoFdWF0b20SBDEwMDAQkKEPGhBjb3Ntb3MtZml4dHVyZS0xICo=",
+  "signatureHex": "a1cd91ec52b98f175f39516b6a628326bb6ae589f6db444b8828bc342f447d1c49267a2f7566139829ec81f84259313061ae20d5cbde696860add01097094610",
+  "unsignedAuthInfoBase64": "ClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECxgR/lEHtfW0wRUBulcB82Fx3jkuM7zynq6wJuVxwnuUSBAoCCAEYBxITCg0KBXVhdG9tEgQxMDAwEJChDw==",
+  "unsignedTxBodyBase64": "Cp8BCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxJ+Ci1jb3Ntb3MxcTZoYWc2N2RsNTN3bDk5dnpnNDJ6OGV5emZ6Mnhsa3Zzcnh1a3YSTQoWL2Nvc21vcy5nb3YudjEuTXNnVm90ZRIzCAESLWNvc21vczF3NTA4ZDZxZWp4dGRnNHk1cjN6YXJ2YXJ5MGM1eHc3azZhaDYwYxgD"
+}
