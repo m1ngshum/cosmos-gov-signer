@@ -136,8 +136,9 @@ test('accepts explicit JSON and rejects invalid intents before emitting evidence
     assert.equal(invalid.stdout, '')
     assert.match(invalid.stderr, message)
   }
-  writeFileSync(path, '{')
+  writeFileSync(path, 'private-file-content')
   const invalidJson = run(path)
   assert.equal(invalidJson.status, 1)
   assert.equal(invalidJson.stdout, '')
+  assert.equal(invalidJson.stderr.trim(), 'intent file must contain valid JSON')
 })

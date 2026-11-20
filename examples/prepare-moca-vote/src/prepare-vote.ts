@@ -84,7 +84,14 @@ async function main(args: string[]) {
     throw new Error('usage: prepare-vote [intent.json]')
   }
   const fixture = new URL('../synthetic-intent.json', import.meta.url)
-  const intent = normalize(JSON.parse(readFileSync(args[0] ?? fixture, 'utf8')))
+  const contents = readFileSync(args[0] ?? fixture, 'utf8')
+  let input: unknown
+  try {
+    input = JSON.parse(contents)
+  } catch {
+    throw new Error('intent file must contain valid JSON')
+  }
+  const intent = normalize(input)
   const { chainId, proposalId, option, granter, delegate, accountNumber, sequence, gasLimit } = intent
   const amount = [{ denom: 'amoca', amount: intent.feeAmount }]
   const vote = await adapter.buildVoteTx(proposalId, option, delegate, granter)
